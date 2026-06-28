@@ -1,0 +1,11 @@
+# Build output & caches (node_modules is ignored by Prettier by default)
+/dist
+/coverage
+/.angular
+
+# Lockfile
+package-lock.json
+
+# Authored prose — hand-formatted, kept out of Prettier (see .editorconfig [*.md])
+/CLAUDE.md
+/docs

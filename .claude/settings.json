@@ -1,0 +1,18 @@
+{
+  "_comment": "Shared, committed Claude Code permissions. Pre-approves safe, repetitive build/test operations so CC doesn't prompt every time. Commits/pushes are intentionally NOT pre-approved — the human reviews and commits. Machine-specific allows (cross-repo read paths, MCP tools) go in settings.local.json (gitignored).",
+  "permissions": {
+    "allow": [
+      "Bash(ng build)",
+      "Bash(ng build:*)",
+      "Bash(npx ng build:*)",
+      "Bash(npm run build)",
+      "Bash(npm run lint)",
+      "Bash(npm run test:*)",
+      "Bash(npm install)",
+      "Bash(npm ci)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ]
+  }
+}
