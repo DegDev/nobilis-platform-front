@@ -6,6 +6,7 @@
 # Lockfile
 package-lock.json
 
-# Authored prose — hand-formatted, kept out of Prettier (see .editorconfig [*.md])
+# Authored prose & local tooling config — not owned by Prettier (see .editorconfig [*.md])
 /CLAUDE.md
 /docs
+/.claude
