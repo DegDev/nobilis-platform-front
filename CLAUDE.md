@@ -90,6 +90,25 @@ We don't rely on memory — tooling guarantees format.
 - Follow the official Angular Style Guide (verify details against the live guide; v22 is recent).
 - Standard naming; standalone components; signals for state.
 
+## Package/folder structure — feature-first (CRITICAL, enforced)
+
+Organize by FEATURE, not by technical type. Top-level folders inside a library/app
+reflect capabilities, not Angular artifact kinds.
+
+ALLOWED: feature folders — `locale/`, `http/`, `auth/`, `orders/`, etc. Each owns its
+components, services, models, and guards for that feature.
+
+FORBIDDEN as top-level buckets: `services/`, `components/`, `models/`, `guards/`,
+`pipes/` containing unrelated features side by side. A feature's service lives WITH
+its feature (LocaleService in locale/), not in a shared services/ bucket.
+
+- When a feature grows, layer INSIDE it if helpful, but keep the feature as the unit.
+- Export the public surface via the library's public-api.ts; keep internals unexported.
+
+Rationale in docs/sources-log.md (same package-by-feature reasoning as the backend:
+cohesion, low coupling, clear capability boundaries). Placing a class in a type bucket
+because it's "easier" is a defect — put it in its feature.
+
 ## IP / clean-room (important — public open-source)
 
 - Not a single line from third-party / former private repositories. Written from scratch.
@@ -105,3 +124,52 @@ We don't rely on memory — tooling guarantees format.
 - recon → spec → tasks → DoD. Milestone/feature plans live in `.agent/plans/`.
 - For fullstack features, the paired backend plan lives in `nobilis-platform-back`.
 - Each task is atomic and verifiable against its DoD.
+
+## MCP servers — mandatory usage
+
+This project runs Claude Code from VSCode against BOTH repos (`nobilis-platform-back`,
+`nobilis-platform-front`) with IntelliJ IDEA open. The following MCP servers are connected and their
+use is **required**, not optional. Do not fall back to plain text search or training-memory when an
+MCP server covers the need.
+
+### jetbrains — REQUIRED for all code navigation and inspection
+You MUST use the `jetbrains` MCP server (the IntelliJ IDEA index) to read, navigate, and understand
+the codebase — across BOTH the backend and frontend repos. Do not rely on plain `grep`/file globbing
+or on memory of where things are when jetbrains can answer it.
+
+- Before editing or referencing any symbol, resolve it through jetbrains (find the class/method/file,
+  its definition, and its usages) instead of guessing its location or signature.
+- To check the impact of a change, use jetbrains to find usages/references — not a text search.
+- For multi-module structure (Maven modules, the dependency graph, Angular projects), query jetbrains
+  rather than inferring from paths.
+- Use IDEA's inspections/diagnostics via jetbrains to catch problems the build alone may not surface.
+- If jetbrains is unavailable or returns nothing for a query, say so explicitly, then fall back —
+  do not silently skip it.
+
+This is a hard rule: jetbrains is the primary way to read this codebase. Skipping it and answering
+from memory or raw text search is a defect.
+
+### context7 — REQUIRED before using any library/framework API
+The stack is deliberately newest-LTS (Java 25, Spring Boot 4.1, Angular 22, Hibernate 7, Flyway,
+Postgres 18). Training memory for these is stale or wrong. Before writing code against a library or
+framework API, you MUST consult `context7` for the current, version-correct documentation — do not
+write the API from memory. This applies especially to: Spring Boot 4 / Spring Framework 7
+configuration, Hibernate 7 (`@UuidGenerator`, JPA auditing), JCA crypto (`AES/GCM/NoPadding`), Flyway
+config, and Angular 22 (signals, Signal Forms, zoneless, `httpResource`).
+
+### playwright — UI verification, ONLY from milestone 03 onward
+`playwright` is for verifying real UI in a running browser. It does NOT apply yet: through milestone
+`01-common` and `02-auth` there are no screens. The frontend work in `01` is a locale service + an
+HTTP wrapper skeleton (no rendered UI) — verify those with unit tests (Vitest + `HttpTestingController`)
+and `ng build`, NOT with playwright.
+
+From milestone `03` (admin shell + first screens) onward, every frontend task that produces or changes
+UI MUST end with a playwright verification: navigate the running app, exercise the change, inspect the
+rendered DOM + actual network requests + console errors. Type-check/build passing is NOT sufficient
+for UI work — prove it in the browser via playwright. State plainly what was verified vs. what couldn't be.
+
+### Cross-repo execution
+A single Claude Code session works on both repos. For fullstack milestones, do the backend part in
+`nobilis-platform-back` and the frontend part in `nobilis-platform-front`, following the paired plan
+files (same `<feature-id>-<slug>.md` name in each, mutually linked). Sibling repo paths come from
+`.claude/local-config.json` (`backend_path` / `frontend_path`).
