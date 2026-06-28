@@ -9,4 +9,5 @@ package-lock.json
 # Authored prose & local tooling config — not owned by Prettier (see .editorconfig [*.md])
 /CLAUDE.md
 /docs
+/.agent
 /.claude
