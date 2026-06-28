@@ -109,6 +109,25 @@ Rationale in docs/sources-log.md (same package-by-feature reasoning as the backe
 cohesion, low coupling, clear capability boundaries). Placing a class in a type bucket
 because it's "easier" is a defect — put it in its feature.
 
+## Secrets — never hardcode keys (CRITICAL, enforced)
+
+NO key, secret, password, or token value is EVER written into a committed file —
+not in source, not in resources, not in test resources, not in YAML/properties,
+not in a Javadoc example. This includes the crypto master key, bank credentials,
+Telegram/SMS tokens, JWT secrets — any credential.
+
+ALLOWED in committed files: the NAME of a property (`nobilis.crypto.master-key`),
+env-var placeholders (`${NOBILIS_CRYPTO_MASTER_KEY}`), and clearly-fake structural
+samples in *.example files.
+
+FORBIDDEN: a real or real-shaped value after `=` or `:` for any key/secret/password/
+token, in ANY committed file including test resources. Tests that need a key generate
+a fresh one at runtime (e.g. @DynamicPropertySource), never read it from a committed file.
+
+This is not a discipline rule — it's gated. A pre-commit hook + CI secret-scan
+(gitleaks) blocks any commit/merge carrying a secret-shaped value. A key in a file is
+a defect even if the build is green.
+
 ## IP / clean-room (important — public open-source)
 
 - Not a single line from third-party / former private repositories. Written from scratch.
