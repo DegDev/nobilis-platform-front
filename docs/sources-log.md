@@ -84,3 +84,21 @@ the project rule "pin versions, never floating".
 - `ng test common --watch=false` → 1/1 passing (Vitest runner confirmed).
 
 No business logic, no UI library (PrimeNG deferred to milestone 03), no domain screens.
+
+## 2026-06-28 — Secret-scan gate (gitleaks)
+
+Discipline is not a control: a real secret nearly reached a committed file in the paired backend
+repo. A machine barrier now enforces "no key/secret/token value in any committed file" — mirrored
+across both repos.
+
+- **gitleaks** (8.30.1, pinned) as the secret scanner — https://github.com/gitleaks/gitleaks.
+- **Pre-commit hook** — `.githooks/pre-commit` runs `gitleaks git --staged` (fail-closed: no gitleaks
+  on PATH → commit refused). Enable once per clone: `git config core.hooksPath .githooks`.
+- **CI** — required GitHub Actions job `.github/workflows/secret-scan.yml` runs `gitleaks dir .`
+  before merge to `dev`.
+- **Config** `.gitleaks.toml` — extends the default ruleset + a rule for a Base64 256-bit value
+  assigned to a secret-ish property; allowlists `*.example` samples, `${ENV}` placeholders, and
+  `node_modules`/`dist`/`target`. Identical to the backend config (one rule set, both repos).
+- **Demonstrated** — a planted key blocks the commit (HEAD unchanged); the clean tree passes.
+
+Rule recorded in `CLAUDE.md` ("Secrets — never hardcode keys"). No secret value is recorded here.

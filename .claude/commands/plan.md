@@ -4,36 +4,35 @@ description: Create a feature plan in .agent/plans/ before implementation. Do no
 
 Create a feature plan. Do not write code.
 
-The plan form follows the repo methodology: **recon → spec → tasks → DoD**. This command is for NEW
-features that don't yet have a written plan. For fullstack features, this front plan has a **paired
-backend plan** in `nobilis-platform-back` with the same file name — keep them in sync.
-
 ## Steps
 
 **STEP 0 — pick a playbook.** Read this repo's `docs/playbooks/README.md` and pick the playbook
-matching the task class — follow it while planning. If there are no playbooks yet or none fit — note
-that explicitly in "Applicable playbook" and continue (playbooks fill in as real patterns emerge:
-CRUD screen, table view, dynamic form, etc.).
+matching the task class — follow it while planning, without re-explaining the pattern. If none fits,
+note that and discuss with the user. For a fullstack task, the paired playbook in the other repo is
+referenced by link (like paired plans).
 
-1. **Check the directory** `.agent/plans/`. If missing — create it: `mkdir -p .agent/plans`.
+1. **Check the directory** `.agent/plans/`. If it does not exist — create it: `mkdir -p .agent/plans`.
 
 2. **Ask the user** (if not given in the request):
-   - **Scope**: frontend / fullstack
-   - **Feature ID**: e.g. `NB-001` (for fullstack, reuse the same ID as the backend plan)
-   - **Slug**: kebab-case description (e.g. `entity-translation`)
-   - **Context from web discussion** (optional): if there's a detailed prompt with architectural
-     analysis — use it for the "Architectural decisions" section.
+   - **Scope**: backend / frontend / fullstack
+   - **Feature ID**: e.g. `NB-001`
+   - **Slug**: kebab-case description (e.g. `common-foundation`)
+   - **Prepared prompt from web chat** (optional): if there is a detailed prompt with architectural
+     discussion already — use it as context for the "Architectural decisions" section.
 
-3. **For fullstack / cross-repo** — find the backend repo path:
-   - Read `.claude/local-config.json` if present; use `backend_path`.
-   - If not present — ask the user for the path and offer to save it in `.claude/local-config.json`.
-   - The paired backend plan must share the same `<feature-id>-<slug>.md` file name.
+3. **For fullstack / cross-repo** — find the sibling repo path:
+   - Read `.claude/local-config.json` if present.
+   - If `backend_path` (when we are in frontend) or `frontend_path` (when in backend) is set — use it.
+   - If not — ask the user for the path, and offer to save it in `.claude/local-config.json` for
+     future tasks.
 
 4. **Create the plan file(s)**:
-   - **frontend only**: `.agent/plans/<feature-id>-<slug>.md` in this repo.
-   - **fullstack**: this file holds the frontend part and links the paired backend plan. The backend
-     part lives in `nobilis-platform-back/.agent/plans/<feature-id>-<slug>.md` (create/update it via
-     the `backend_path`, or tell the user to run `/plan` on the backend side).
+   - **backend only**: `.agent/plans/<feature-id>-<slug>.md` in the current repo. If we are in
+     frontend — write the backend plan via the absolute path
+     `<backend_path>/.agent/plans/<feature-id>-<slug>.md`.
+   - **frontend only**: same, in the frontend repo.
+   - **fullstack**: two files, one per repo, with the same name `<feature-id>-<slug>.md`. Each holds
+     its own part with a mutual link.
 
 5. **Plan structure** (markdown):
 
@@ -44,52 +43,53 @@ CRUD screen, table view, dynamic form, etc.).
 <e.g. NB-001>
 
 ## Scope
-<frontend | fullstack — frontend part>
+<backend | frontend | fullstack — backend part | fullstack — frontend part>
 
 For fullstack:
-**Paired plan:** `<feature-id>-<slug>.md` in nobilis-platform-back (backend part).
+**Paired plan:** `<feature-id>-<slug>.md` in the <backend|frontend> repo.
 
 ## Applicable playbook
-- `docs/playbooks/<name>.md` — <why it fits the task class>
-  (or: "no matching playbook — new pattern; capture it in playbooks after implementation")
-
-## Recon (before code)
-- Remaining TBDs to close before implementation.
-- What to verify/read (Angular Style Guide, existing engine components, the backend API contract
-  from the paired plan).
-- Decisions → record in `docs/sources-log.md` (provenance, clean-room).
+- `docs/playbooks/<name>.md` (this repo) — <why it fits the task class>
+  (or: "none fits, needs discussion")
+- fullstack: paired `<other-repo>/docs/playbooks/<name>.md`
 
 ## Goal
 <one sentence: what we do and why>
 
 ## Architectural decisions
-<Key choices and rationale. Keep within the engine/domain boundary: this repo is engine UI only;
-domain screens live in the homeservice-front repo. UI library is PrimeNG (from milestone 03).>
+<If a prepared prompt exists — key choices and rationale from it. Otherwise a short description of
+the technology choices. Keep within the engine/domain boundary: this repo is engine only; domain
+screens/logic live in the homeservice repos. UI library is PrimeNG (from milestone 03).>
 
-## Spec — files to create / change
-Angular workspace: `common` (lib), `admin` (app), `app` (app).
+## Files to create / change
+
+### Backend (if scope includes backend):
+Modules: `common`, `ai`, `auth`, `app`, `admin`, `integration`.
+
+- `<module>/src/main/java/...` — description
+- Flyway (if needed): `common/src/main/resources/db/migration/<file>`
+
+### Frontend (if scope includes frontend):
+Projects: `common` (library), `admin`, `app`.
 
 - `projects/<project>/src/...` — description
-- Shared, reusable UI → `common`. App shells stay thin.
-
-## Tasks (atomic units)
-1. ...
-2. ...
-
-## Testing strategy
-- Unit (Vitest + Angular TestBed)
-- Component / E2E — if applicable
-
-## DoD (verifiable readiness criteria)
-- <concrete, measurable: "ng build green", "npm run lint green", "component renders with signal
-  inputs", "matches the backend contract from the paired plan", etc.>
 
 ## Open questions
 1. ...
 
-## Related features / dependencies
-- Cross-repo: the paired backend plan (for fullstack)
-- Blocking features / build-plan milestones
+## Testing strategy
+
+### Backend (if applicable):
+- Unit tests (JUnit 5)
+- Integration tests if integrations are touched
+
+### Frontend (if applicable):
+- Unit tests (Vitest + Angular TestBed)
+- Component / E2E tests if applicable
+
+## Related features
+- Cross-repo: the paired plan (for fullstack)
+- Dependencies: blocking features / build-plan milestones
 
 ## Risks
 - ...
