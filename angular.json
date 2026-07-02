@@ -62,7 +62,7 @@
                 "input": "projects/admin/public"
               }
             ],
-            "styles": ["projects/admin/src/styles.scss"]
+            "styles": ["node_modules/primeicons/primeicons.css", "projects/admin/src/styles.scss"]
           },
           "configurations": {
             "production": {
@@ -90,6 +90,9 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "proxyConfig": "projects/admin/proxy.conf.json"
+          },
           "configurations": {
             "production": {
               "buildTarget": "admin:build:production"
