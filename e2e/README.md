@@ -13,15 +13,15 @@ End-to-end tests for the admin app. `playwright.config.ts` starts the Angular de
 
 ## Two-terminal dev flow
 
-**Terminal 1 — admin backend** (from `nobilis-platform-back`, Java 25). Enable admin login and
-supply the three secrets via env (never commit values):
+**Terminal 1 — admin backend** (from `nobilis-platform-back`, Java 25). Use the local dev profile:
+copy the template to the gitignored real file, fill in real secrets, then run with the profile.
 
 ```bash
-NOBILIS_AUTH_JWT_SECRET=<base64, >=256-bit> \
-NOBILIS_AUTH_ADMIN_LOGIN_EMAIL=admin@example.org \
-NOBILIS_AUTH_ADMIN_LOGIN_PASSWORD_HASH=<bcrypt hash of the password> \
-mvn -pl admin spring-boot:run \
-  -Dspring-boot.run.arguments=--nobilis.auth.admin-login.enabled=true
+cp admin/src/main/resources/application-local.properties.example \
+   admin/src/main/resources/application-local.properties
+# edit application-local.properties — set the JWT key, admin email, and BCrypt password hash
+# (this file is gitignored via *-local.properties; never commit it), then:
+mvn -pl admin spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
 **Terminal 2 — e2e** (from `nobilis-platform-front`). Give the test the SAME email + the _plaintext_
