@@ -10,6 +10,10 @@ End-to-end tests for the admin app. `playwright.config.ts` starts the Angular de
 - **valid login → dashboard** — fills the login form, submits to the real backend through the dev
   proxy, and asserts the dashboard. Needs the admin backend running **and** credentials in env; it
   **skips** when those are absent (so the suite stays green locally/CI without a backend).
+- **settings CRUD** — logs in, opens the settings screen, then creates a uniquely-keyed setting,
+  edits it, and deletes it (leaving the store as it found it). Same requirements as the login flow —
+  needs the backend on the **`local` (db) profile** so the settings API is mounted, plus credentials
+  in env; **skips** without them.
 
 ## Two-terminal dev flow
 
