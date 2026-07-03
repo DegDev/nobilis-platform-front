@@ -310,3 +310,18 @@ opened: the generic table/form/dialog + HTTP contract, now driven by a concrete,
   without a backend.
 - Ride-alongs (flagged): `proxy.conf.json` extended with `/admin/api`; `package.json` `start` →
   `ng serve admin` (multi-project workspace).
+
+## 2026-07-03 — Harness: physical branch-discipline hooks, reviewer subagent, context-economy + prune
+
+Adopted Claude Code best-practices (code.claude.com/docs/en/best-practices) as concrete barriers:
+- **Branch discipline → physical git hooks**, not Claude-settings hooks: `.githooks/pre-commit`
+  main-guard + new `.githooks/pre-push` (blocks a push whose destination ref is `main`, and a push
+  while the current branch's upstream ≠ `origin/<same-name>`; the first `push -u` is allowed). A git
+  hook gates the human too, so the rule can't be bypassed by editing agent settings.
+- **Reviewer subagent** (`.claude/agents/reviewer.md`) — fresh-context adversarial diff-vs-DoD check
+  before the commit gate (output-side premise-check, mirrors recon's evidence-per-claim discipline).
+- **Context economy** — exploration runs in the `recon` subagent returning a compressed `file:line`
+  summary; window-fill degrades everything (the guide's #1 thesis).
+- **CLAUDE.md prune** — Angular-22 verification rules → on-demand skill
+  (`.claude/skills/angular22-verification/`); load-bearing rules kept; scattered DoD criteria
+  consolidated into one "Default DoD". Bar for keeping a line: "would removing it cause a mistake?"
