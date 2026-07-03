@@ -170,3 +170,83 @@ signals throughout.
   warns until `rootDir` is set explicitly. Setting it to the value TS already inferred silences the
   warning class repo-wide with no change to the emit/output layout (`ng build` unaffected). →
   TypeScript 6 `rootDir` migration guidance.
+
+## 2026-07-03 — Milestone 03, pass 3b: generic CRUD front components (front-common library)
+
+First real code in `projects/common`: a thin, schema-friendly generic CRUD kit — a table, a form, a
+dialog opener, and the HTTP contract mappers the admin settings screen (pass 3c) will consume.
+Feature-first under `lib/` (`http/pageable`, `http/problem`, `crud/table`, `crud/form`,
+`crud/dialog`). Thin + as-data: components take field/column CONFIG, no metadata engine; custom
+cells/fields are plain Angular via template outlets (composition over configuration).
+
+### Decisions and their public derivation
+
+- **A library that imports PrimeNG / Signal Forms declares them as `peerDependencies`, not deps** —
+  `projects/common/package.json` peers `@angular/forms`, `primeng`, and `rxjs` alongside the existing
+  `@angular/{common,core}`. ng-packagr treats any imported package that is neither a dep nor a peer
+  as unresolved; peers (not deps) so the host supplies ONE copy (no duplicate Angular/PrimeNG). CDK
+  is not peered directly — it is PrimeNG's own transitive peer, provided by the app. Proven: `ng build
+  common` (partial-compilation library build) is clean, and an admin smoke spec importing the public
+  surface from `common` type-checks. → ng-packagr library packaging (peerDependencies); PrimeNG 21
+  `package.json` peer set.
+- **Generic form = Signal Forms ARRAY-MODEL, exactly as recon predicted** — the model is an array of
+  field records (config + value together); one static schema fits any field list via `applyEach`, and
+  each item's `required` is read per-item with `applyWhen(({valueOf}) => valueOf(item.required))`.
+  This sidesteps the injection-context/timing trap of a config-derived schema: `form()` stays a plain
+  field-initializer over one signal and never needs the config at construction. Two build-surfaced
+  refinements: (1) the `required` model property is NON-optional — Signal Forms types an OPTIONAL
+  model property as a "maybe" path that a schema cannot read (`MaybeSchemaPathTree`), so it must be
+  present (`false` for optional fields); (2) `[formField]` on a native input is typed by the control
+  (text→`FieldTree<string>`, number→`FieldTree<number|null>`, checkbox→`FieldTree<boolean>`), so a
+  heterogeneous union value needs typed accessor casts to bind. Only native inputs carry `[formField]`
+  (the `pInputText` path proven in pass 1), not PrimeNG form controls (CVA↔Signal-Forms interop
+  unverified). Verified by a jsdom component test: builds from config, blocks save while a required
+  field is empty then emits once filled, and maps server errors per field. → Angular Signal Forms
+  guide (`form`, `applyEach`, `applyWhen`, `FieldTree`) via context7.
+- **Table = `p-table` with columns-as-data, client by default, lazy-ready** — `[columns]` drives
+  `#header`/`#body`; client-side paginate/sort over `value` by default; set `lazy` and the component
+  maps PrimeNG's `TableLazyLoadEvent` to Spring pageable params and emits them. Custom cells via an
+  `nbColumnCell` template escape hatch (row is the implicit context). A jsdom test proves
+  columns-from-config render, the custom cell projects, and the initial lazy load emits `page 0,
+  size 10`. → PrimeNG Table dynamic-columns + lazy (`onLazyLoad`) docs (context7 v20; API stable to
+  21).
+- **PagedModel wire shape mirrors the backend, read from its test (not guessed)** — `PagedModel<T>` =
+  `{ content: T[], page: { size, number, totalElements, totalPages } }`, the Spring Boot 4
+  `org.springframework.data.web.PagedModel` serialization; taken from the back
+  `SettingsCrudIntegrationTest` assertions (`$.content`, `$.page.size`, `$.page.totalElements`).
+  Pageable request is the mirror: zero-based `page` (= `first / rows`), `size`, and `field,(asc|desc)`
+  `sort` entries. → back repo `SettingsCrudIntegrationTest`; Spring Data `PagedModel`.
+- **RFC 9457 consumed as a parser + opt-in interceptor** — `parseProblemDetail` extracts a typed
+  `{ title, status, detail, fieldErrors? }` from an `HttpErrorResponse` (content type
+  `application/problem+json`, or a structural `status`-number fallback); `fieldErrorsByKey` indexes
+  it for per-field form display; `problemDetailInterceptor` is an OPT-IN functional interceptor
+  (register via `withInterceptors`) that rethrows a typed `ProblemDetailError` — never global by
+  default (engine opt-in principle). → RFC 9457; the back `GlobalExceptionHandler` `fieldErrors`
+  shape.
+- **Dialog opener is a thin convenience, and PrimeNG's `DialogService` is NOT root-provided** —
+  `CrudDialog.open(component, config)` forwards to `DialogService.open` and returns the close result
+  as an Observable, guarding the `DynamicDialogRef | null` return with `EMPTY`. It is `@Injectable()`
+  (NOT `providedIn: 'root'`) because `DialogService` itself is not root-provided, so a consumer
+  provides the pair together — verified by reading PrimeNG's dynamicdialog types. → PrimeNG
+  DynamicDialog `DialogService`.
+- **No hardcoded UI strings in the library** — every label/message (columns, field labels, submit /
+  cancel, required messages) comes from the caller's config; the library ships zero display text, the
+  seam a later i18n pass localises. Escape hatches (`nbColumnCell`, `nbFieldTemplate`) are exercised
+  in the component tests.
+
+### Verification
+
+- `ng build common` (library) + `npm run build` (all three projects) green; `ng lint` green across
+  common/admin/app; `prettier --check` clean.
+- Vitest: 16 library tests (pageable mapper, problem parser, table-from-config + lazy mapping + custom
+  cell, form-from-config + required + server errors + custom field) + an admin smoke-import spec, all
+  green. Component tests run in jsdom; no e2e here (e2e stays in the admin app, pass 3c).
+- One lint fix surfaced: an output named `cancel` collides with a native DOM event
+  (`@angular-eslint/no-output-native`) → renamed `cancelled`.
+
+### Debt (for later passes)
+
+- Number/checkbox `[formField]` binding compiles and the form validates, but runtime coercion for
+  non-text inputs is unproven here (settings 3c uses text/password/checkbox) — confirm in 3c's live
+  screen. `CrudDialog` + `DialogService` wiring is import-verified only; real dialog hosting lands in
+  3c.
