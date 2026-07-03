@@ -102,3 +102,71 @@ across both repos.
 - **Demonstrated** — a planted key blocks the commit (HEAD unchanged); the clean tree passes.
 
 Rule recorded in `CLAUDE.md` ("Secrets — never hardcode keys"). No secret value is recorded here.
+
+## 2026-07-02 — Milestone 03, pass 1: admin vertical slice (PrimeNG login → guard → dashboard)
+
+First rendered screens: a PrimeNG-themed admin login (Signal Forms) that authenticates against the
+backend admin host, stores the thick token, guards a dashboard route, and is exercised end-to-end by
+Playwright. PrimeNG connects here (deferred from milestone 00 as planned). Zoneless, OnPush, and
+signals throughout.
+
+### Decisions and their public derivation
+
+- **PrimeNG 21.1.9 on Angular 22 via `--legacy-peer-deps`** — the latest PrimeNG (21.1.9,
+  `package.json:28`) still peers `@angular/common ^21` only; Angular 22 is ~3 weeks old and no
+  Angular-22 peer is published yet. Installed with `--legacy-peer-deps`; `@angular/cdk` is pinned to
+  `21.2.14` (`package.json:19`) because that CDK's peer already allows Angular 22 **and** satisfies
+  PrimeNG 21's `cdk ^21`. It **compiles (AOT) and runs** — the login page renders and an interactive
+  submit is proven by the Chromium e2e. Revisit when PrimeNG ships an Angular-22 peer. → PrimeNG
+  installation docs; npm peer-dependency resolution.
+- **Theme package is `@primeuix/themes`, not `@primeng/themes`** — `providePrimeNG({ theme: { preset:
+  Aura } })` + `provideAnimationsAsync()` (`app.config.ts:14-16`), importing `Aura` from
+  `@primeuix/themes/aura` (`:5`). Doc-drift noted: `CLAUDE.md` said `@primeng/themes` (stale — the
+  theming packages were renamed to `@primeuix/*`); trusted the live PrimeNG docs over the local doc.
+  → PrimeNG v20 theming docs (context7).
+- **Signal Forms (`@angular/forms/signals`) works under Angular 22** — `form(model, path => {…})`
+  with `required`/`email` validators (`login.ts:2,31`) and the `[formField]` directive bound to
+  native inputs (`login.html:6,20`). The AOT compiler enforces its rules (NG8022 forbids a `name`
+  attribute on a `[formField]` node — removed). Runtime submit proven by e2e flow 2. → Angular
+  Signal Forms guide (context7).
+- **`p-password` not used — deterministic `pInputText` path** — `[formField]` × PrimeNG-CVA interop
+  is unverifiable at build time, so the password field is a plain `<input pInputText type="password">`
+  (`login.html:16-21`) that binds to Signal Forms for certain — NOT a fall back to Reactive Forms.
+  `p-password` can be trialed now that the e2e harness exists — recorded as optional debt. → Angular
+  Signal Forms + PrimeNG InputText docs (context7).
+- **Zoneless is the Angular 22 default** — no `provideZonelessChangeDetection` (that is the obsolete
+  v20 idiom) and no zone.js. `provideAnimationsAsync()` (PrimeNG needs it) required installing
+  `@angular/animations@22.0.4` (`package.json:18`), which the zoneless scaffold omits. → Angular
+  zoneless guide (context7): "zoneless is the default in v21+".
+- **Dev transport + token storage** — the Angular dev proxy forwards `/auth` → the admin host on
+  `:8080` (`proxy.conf.json:2-3`), so no CORS on the backend. The token lives in a signal mirrored to
+  **`sessionStorage`** (tab-scoped, cleared on close), NOT `localStorage` (`auth-store.ts:21,25,50`);
+  a functional `CanActivateFn` redirects unauthenticated navigation to `/login`. → Angular CLI proxy,
+  `provideHttpClient`, and router-guard docs (context7).
+- **Playwright e2e, backend-optional** — `@playwright/test` with a `webServer` that starts
+  `ng serve admin`. The anonymous→login flow always runs (no backend); the credentialed
+  login→dashboard flow `test.skip`s unless `NOBILIS_E2E_ADMIN_*` env is set
+  (`e2e/admin-login.spec.ts:14-16`), so the suite stays green locally/CI without a backend. → Playwright
+  test + `webServer` docs (context7).
+
+### Verification (Definition of Done)
+
+- `npm run build` (prod, all three projects), `ng lint admin`, `ng test admin` (Vitest), and
+  `prettier --check .` → all green.
+- Playwright: the anonymous→login flow passes live in Chromium; login→dashboard skips without
+  `NOBILIS_E2E_*` creds + a running backend.
+- All added dependencies pinned to exact versions (no floating ranges), per project rule.
+
+### Debt (for later passes)
+
+- PrimeNG↔Angular-22 peer gap (`--legacy-peer-deps`); trial `p-password` on the e2e harness; the
+  `?locale=` transport is not wired yet (front has no i18n mechanism; UI strings are centralised in
+  per-feature `*.strings.ts` constants pending milestone 05).
+
+## 2026-07-02 — Milestone 03, pass 2: TS6 rootDir
+
+- **Explicit `"rootDir": "./src"`** in every project tsconfig (`admin`/`app`/`common`, the
+  `*.app`/`*.spec`/`*.lib` variants) — TypeScript 6 no longer infers the common source directory and
+  warns until `rootDir` is set explicitly. Setting it to the value TS already inferred silences the
+  warning class repo-wide with no change to the emit/output layout (`ng build` unaffected). →
+  TypeScript 6 `rootDir` migration guidance.
