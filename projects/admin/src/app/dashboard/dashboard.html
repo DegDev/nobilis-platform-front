@@ -3,5 +3,8 @@
   <p>
     {{ strings.signedInAs }}: <strong>{{ subject() }}</strong>
   </p>
+  <nav class="dashboard__nav">
+    <p-button [label]="strings.settings" icon="pi pi-cog" [routerLink]="['/settings']" />
+  </nav>
   <p-button [label]="strings.logout" severity="secondary" (onClick)="logout()" />
 </main>

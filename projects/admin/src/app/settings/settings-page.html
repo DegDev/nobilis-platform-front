@@ -1,0 +1,38 @@
+<main class="settings">
+  <header class="settings__header">
+    <div class="settings__heading">
+      <a class="settings__back" [routerLink]="['/dashboard']">{{ strings.back }}</a>
+      <h1>{{ strings.title }}</h1>
+    </div>
+    <p-button [label]="strings.newSetting" icon="pi pi-plus" (onClick)="create()" />
+  </header>
+
+  <nb-generic-table
+    [columns]="columns"
+    [value]="rows()"
+    [actions]="actions"
+    [lazy]="true"
+    [totalRecords]="totalRecords()"
+    [loading]="loading()"
+    (lazyLoad)="load($event)"
+    (action)="onAction($event)"
+  >
+    <ng-template nbColumnCell="value" let-row>
+      @if (row.secret) {
+        <p-tag severity="secondary" icon="pi pi-lock" [value]="strings.secretMask" />
+      } @else if (row.value) {
+        <span>{{ row.value }}</span>
+      } @else {
+        <span class="settings__empty">{{ strings.emptyValue }}</span>
+      }
+    </ng-template>
+
+    <ng-template nbColumnCell="secret" let-row>
+      @if (row.secret) {
+        <p-tag severity="warn" [value]="strings.secretBadge" />
+      }
+    </ng-template>
+  </nb-generic-table>
+
+  <p-confirmdialog />
+</main>

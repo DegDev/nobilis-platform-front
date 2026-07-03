@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { AuthStore } from '../auth/auth-store';
 import { DASHBOARD_STRINGS } from './dashboard.strings';
@@ -11,7 +11,7 @@ import { DASHBOARD_STRINGS } from './dashboard.strings';
  */
 @Component({
   selector: 'nb-dashboard',
-  imports: [ButtonModule],
+  imports: [RouterLink, ButtonModule],
   templateUrl: './dashboard.html',
 })
 export class Dashboard {

@@ -250,3 +250,63 @@ cells/fields are plain Angular via template outlets (composition over configurat
   non-text inputs is unproven here (settings 3c uses text/password/checkbox) — confirm in 3c's live
   screen. `CrudDialog` + `DialogService` wiring is import-verified only; real dialog hosting lands in
   3c.
+
+## 2026-07-03 — Milestone 03, pass 3c: settings screen (first CRUD-kit consumer)
+
+The admin app's `settings/` feature — the first real screen built on the pass-3b CRUD kit and the
+first consumer of the pass-3a `/admin/api/settings` backend. It closes the loop the two prior passes
+opened: the generic table/form/dialog + HTTP contract, now driven by a concrete, typed model.
+
+### Decisions and their public derivation
+
+- **Typed model path, not the generic config array** — the Setting shape is known (`key`, `value`,
+  `secret`), so `SettingsApi` and `SettingFormDialog` speak concrete types; the field-config array
+  (the generic escape hatch) is reserved for unknown-shape screens. → package-by-feature cohesion
+  (a feature owns its concrete model); the CRUD kit stays generic while its first consumer is
+  specific.
+- **A DynamicDialog wrapper hosts the generic form** — PrimeNG's `DialogService` instantiates a
+  component and passes `config.data`, so it does not wire a hosted component's `@Input`/`@Output`.
+  `SettingFormDialog` is that thin host: it injects `DynamicDialogConfig` (create vs edit seed) and
+  `DynamicDialogRef` (close with the saved row), renders `<nb-generic-form>`, and OWNS the write so a
+  `400` keeps the dialog open and feeds `fieldErrors` back into the form (closing only on success).
+  → PrimeNG DynamicDialog "Passing Data" (config data + `DynamicDialogRef` lifecycle), verified via
+  context7.
+- **Secret masking honours the backend contract** — a secret row's value arrives `null` (masked at
+  the source, pass-3a `SettingDto`), rendered as a lock `p-tag` ("Hidden"), never a decrypted-looking
+  placeholder and never the literal `"null"`; the `secret` flag drives a warn `p-tag` badge. A
+  non-secret value renders as-is, an unset one as an em-dash. → pass-3a decision "OMIT the value
+  (null), not a `••••` placeholder" mirrored on the read path.
+- **Secret edit is honest about PUT semantics** — recon of `SettingsService.set` confirmed PUT
+  UNCONDITIONALLY overwrites the value (no keep-existing-if-blank). So the edit form starts the value
+  EMPTY for a secret (its plaintext is never returned) and an inline hint states plainly that saving
+  overwrites — an empty save clears the secret. → back `SettingsService.set` (create-or-replace), not
+  guessed.
+- **Auth interceptor added (gap found in GATE-0)** — the app attached no token (the dashboard had no
+  data call); `/admin/api` is behind the servlet gate (`JwtAuthenticationFilter` reads
+  `Authorization: Bearer`). `authInterceptor` stamps the token on `/admin/api` requests only (the
+  login path carries none). Registered alongside the pass-3b `problemDetailInterceptor` via
+  `withInterceptors`. → back `JwtAuthenticationFilter` bearer contract.
+- **Reuse over hand-rolling** — the screen composes `GenericTable`, `GenericForm`, `CrudDialog`, and
+  the `PageableQuery`/`PagedModel`/`ProblemDetail` mappers; the only new UI is the settings-specific
+  cells (masked value, secret badge) via the `nbColumnCell` escape hatch. Delete uses PrimeNG's
+  `ConfirmationService` + `<p-confirmdialog>`. All strings live in `settings.strings.ts` (no
+  hardcoded display text). → project rule "reuse shared components; i18n in the same change".
+
+### Verification
+
+- `ng build common` + `ng build admin` (dev, full AOT) green; `ng lint admin` green;
+  `prettier --check` clean. One type fix: `PagedModel.content` is `readonly`, copied into the mutable
+  rows signal (`[...page.content]`).
+- Vitest: a `SettingsPage` component test asserts the masked value cell renders the "Hidden" tag +
+  secret badge and never leaks the plaintext or a `"null"` placeholder (3 admin specs green).
+- Playwright (live, dev server + the real backend gate): anonymous `/settings` → `/login` (guard);
+  authenticated, the screen mounts and `GenericTable` renders (columns, sort, paginator, actions);
+  the lazy load fires `GET /admin/api/settings?page=0&size=10` (pageable mapping correct), the proxy
+  routes `/admin/api`, and the request carries `Authorization: Bearer …` (interceptor verified in the
+  request headers) — the gate `401`s the fake token, as it should. Dashboard → Settings nav routes;
+  the create dialog opens with the typed Key/Value/Secret fields and Save is gated by the required
+  key until filled. The full create→edit→delete round-trip against a seeded DB is the credentialed
+  e2e spec (`admin-settings.spec.ts`), which skips without `NOBILIS_E2E_*` so the suite stays green
+  without a backend.
+- Ride-alongs (flagged): `proxy.conf.json` extended with `/admin/api`; `package.json` `start` →
+  `ng serve admin` (multi-project workspace).

@@ -5,5 +5,6 @@
 export const DASHBOARD_STRINGS = {
   title: 'Admin dashboard',
   signedInAs: 'Signed in as',
+  settings: 'Settings',
   logout: 'Sign out',
 } as const;

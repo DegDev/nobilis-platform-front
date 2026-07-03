@@ -1,0 +1,15 @@
+@if (editingSecret) {
+  <p-message severity="info" variant="simple" size="small" styleClass="nb-setting-dialog__hint">
+    {{ strings.secretEditHint }}
+  </p-message>
+}
+
+<nb-generic-form
+  [fields]="fields()"
+  [serverErrors]="serverErrors()"
+  [pending]="pending()"
+  [submitLabel]="strings.save"
+  [cancelLabel]="strings.cancel"
+  (save)="onSave($event)"
+  (cancelled)="onCancel()"
+/>
