@@ -1,0 +1,35 @@
+<main class="roles">
+  <header class="roles__header">
+    <div class="roles__heading">
+      <a class="roles__back" [routerLink]="['/dashboard']">{{ strings.back }}</a>
+      <h1>{{ strings.title }}</h1>
+    </div>
+    <p-button [label]="strings.newRole" icon="pi pi-plus" (onClick)="create()" />
+  </header>
+
+  <nb-generic-table
+    [columns]="columns"
+    [value]="rows()"
+    [actions]="actions"
+    [lazy]="true"
+    [totalRecords]="totalRecords()"
+    [loading]="loading()"
+    (lazyLoad)="load($event)"
+    (action)="onAction($event)"
+  >
+    <ng-template nbColumnCell="permissions" let-row>
+      @if (row.permissions.length) {
+        <span class="roles__perms">
+          @for (permission of row.permissions; track permission) {
+            <p-tag severity="secondary" [value]="permission" />
+          }
+        </span>
+      } @else {
+        <span class="roles__empty">{{ strings.noPermissions }}</span>
+      }
+    </ng-template>
+  </nb-generic-table>
+
+  <p-confirmdialog />
+  <p-toast />
+</main>

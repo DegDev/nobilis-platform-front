@@ -325,3 +325,49 @@ Adopted Claude Code best-practices (code.claude.com/docs/en/best-practices) as c
 - **CLAUDE.md prune** — Angular-22 verification rules → on-demand skill
   (`.claude/skills/angular22-verification/`); load-bearing rules kept; scattered DoD criteria
   consolidated into one "Default DoD". Bar for keeping a line: "would removing it cause a mistake?"
+
+## 2026-07-04 — Admin: roles management screen (M03 pass 4c) on the CRUD kit
+
+Second screen on the common CRUD kit (after settings): `roles/` feature in the admin app —
+`RolesApi` (`/admin/api/roles`, `PagedModel`/`PageableQuery`, catalog at `/permissions`), a
+`GenericTable` list (code, name, permission chips) and a `RoleFormDialog` (`GenericForm` +
+`CrudDialog`). Mirrors the settings feature structure. Rows are addressed by numeric `id` (unlike
+settings' string `key`), matching the backend `RoleController` `/{id:\d+}` paths.
+
+- **PrimeNG `p-multiSelect` (v21.1.9) via the field-template escape hatch — the multiselect verdict.**
+  The kit's `GenericForm` binds only NATIVE inputs with Signal Forms `[formField]`; PrimeNG
+  form-control CVA × Signal Forms interop is unverified, so the permissions field is the
+  `nbFieldTemplate` escape hatch (composition, zero kit changes). GATE-0 finding against the
+  installed typings (`node_modules/primeng/types/primeng-multiselect.d.ts`): `MultiSelect extends
+  BaseEditableHolder implements ControlValueAccessor` and has **no `value` input** — so the planned
+  "`[(value)]`" does not exist. The clean plain-binding path is classic-forms **`[ngModel]` +
+  `(ngModelChange)`** (FormsModule) feeding a `signal<string[]>`, `[options]` from the catalog
+  (primitive strings → each is its own label+value → the model is `string[]`). Verdict: **binds
+  cleanly** — verified in a real zoneless browser (playwright, API route-mocked): options render
+  from the catalog, selections reach the POST/PUT bodies, an edit dialog is pre-populated from the
+  role's permissions (display binding via `[ngModel]="permissions()"`), and the immutable `code` is
+  disabled on edit and never sent on PUT. **Promotion into the kit (option a) stays deferred**: what
+  we proved is the ngModel escape hatch, NOT `[formField]` × PrimeNG CVA — that interop remains
+  untested and quarantined until explicitly validated. Ref: Angular `ControlValueAccessor` / `ngModel`
+  two-way for signals (`[ngModel]="s()" (ngModelChange)="s.set($event)"`, since a banana-box can't
+  assign to a signal). PrimeNG MultiSelect docs (primeng.org) for `options`/`display`/`inputId`.
+- **Error surfaces.** Backend maps `RoleConflictException` → `409` and `UnknownPermissionException`
+  → `400`, both `ProblemDetail.forStatusAndDetail(...)` with a top-level `detail` and NO
+  `fieldErrors` (bean-validation `400`s carry `fieldErrors`). So the dialog shows a form-level
+  message from `problem.detail` when `fieldErrors` is empty, and per-field messages otherwise; a
+  blocked delete (`409` "assigned to N account(s)") surfaces as a PrimeNG toast on the list page.
+- **Verification.** `ng build admin` (AOT, `roles-page` lazy chunk) + `ng lint admin` + `ng test
+  admin` (4 specs incl. a `RoleFormDialog` test: options fed from a catalog, selected values reach
+  the create request) all green. Live playwright: guard redirect, table + chips, create (dialog,
+  multiselect options, required-gated Save, correct POST), edit (disabled code, pre-populated
+  multiselect, PUT without `code`, addressed by id), and the `409`-delete toast. The credentialed
+  e2e spec (`e2e/admin-roles.spec.ts`) skips without `NOBILIS_E2E_*` so the suite stays green
+  without a backend.
+- **e2e selector lesson — open a `p-multiSelect` via its VISIBLE trigger, not the hidden input.**
+  Binding `[inputId]="key"` puts that id on PrimeNG's hidden focus input
+  (`data-pc-section="hiddeninput"`, `role="combobox"`, `sr-only`), so a Playwright
+  `page.locator('#key').click()` waits forever ("element is not visible/stable") and times out.
+  Reproduced + confirmed against the v21.1.9 DOM (context7 + a headed run): click the visible host
+  (`page.locator('p-multiselect')`) to open the panel; options render in a body-level overlay, so
+  page-scoped `getByRole('option')` finds them. Product code was correct — a test-only selector fix.
+  The accounts screen (4e) uses the same pattern, so target the trigger there too.

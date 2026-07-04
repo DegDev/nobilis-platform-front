@@ -1,0 +1,37 @@
+@if (isEdit) {
+  <div class="nb-form__field">
+    <label class="nb-form__label" for="role-code">{{ strings.fieldCode }}</label>
+    <input id="role-code" pInputText [value]="existingCode" disabled />
+    <p-message severity="secondary" variant="simple" size="small">
+      {{ strings.codeImmutableHint }}
+    </p-message>
+  </div>
+}
+
+@if (formError(); as message) {
+  <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
+}
+
+<nb-generic-form
+  [fields]="fields()"
+  [serverErrors]="serverErrors()"
+  [pending]="pending()"
+  [submitLabel]="strings.save"
+  [cancelLabel]="strings.cancel"
+  (save)="onSave($event)"
+  (cancelled)="onCancel()"
+>
+  <ng-template nbFieldTemplate="permissions" let-field>
+    <label class="nb-form__label" [for]="field.key">{{ field.label }}</label>
+    <p-multiSelect
+      [inputId]="field.key"
+      [options]="catalog()"
+      [ngModel]="permissions()"
+      (ngModelChange)="permissions.set($event)"
+      [placeholder]="strings.permissionsPlaceholder"
+      display="chip"
+      [showToggleAll]="false"
+      appendTo="body"
+    />
+  </ng-template>
+</nb-generic-form>
