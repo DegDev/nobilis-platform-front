@@ -415,3 +415,32 @@ verb (soft-delete = choosing `BLOCKED` in the status field, per the 4d contract)
   roleIds:[1,2]}` (roles by id, realms by name); dialog closes + list reloads; and the empty-state
   when the list is empty. Multiselect e2e targets the visible `p-multiselect`/`p-select` trigger, not
   the hidden `inputId` input (the 4c lesson).
+
+## 2026-07-04 — Harness: Claude Code format + verify hooks (fullstack, both repos)
+
+Fullstack #2 of the hooks/context-hygiene series (the `2026-07-03` entry above was #1 — physical
+git hooks). Turns the advisory format/verify CLAUDE.md rules into deterministic tool-call barriers.
+
+- **Two Claude Code hooks, committed in `.claude/settings.json` of BOTH repos** (merged next to
+  `permissions`, never replacing them): a **PostToolUse** per-file formatter and a **Stop** full-verify.
+  The shared scripts (`.claude/hooks/format-file.sh`, `verify-on-stop.sh`) are **byte-identical** across
+  the two repos — only the session-root repo's hooks fire, but either repo can be root, so both carry them.
+- **No PreToolUse boundary hook** (unlike the abandoned single-repo sketch). A fullstack session
+  legitimately writes both trees, so a "deny outside `$CLAUDE_PROJECT_DIR`" barrier would block the
+  workflow; engine/domain + sibling-read-only boundaries stay on the `.githooks/` layer (pre-commit /
+  pre-push) + CLAUDE.md prose. Only the `recon` subagent is read-only on the sibling, not the main session.
+- **PostToolUse format dispatches by extension** — `*.ts/*.tsx/*.html/*.scss/*.css` → the repo's
+  `node_modules/.bin/prettier`; `*.java` → a standalone google-java-format jar (back-only, gitignored
+  `.claude/tools/`). Side-effect only; a formatter error NEVER fails the edit. `*.md/*.json` deliberately
+  excluded so the methodology/sources docs are never churned (and the byte-identical invariant holds).
+- **Stop = full verify of every dirty tree, block-once** — front dev-AOT build of `common`/`admin`/`app`
+  (`ng build … --configuration=development`) + one-shot `ng test … --no-watch`; back `mvn -B verify`.
+  Each tree is skipped when clean (porcelain-scoped); blocks exactly once (`stop_hook_active`) so a
+  persistently red build surfaces and stops, never loops.
+- **Provenance:** current Claude Code hooks docs (code.claude.com/docs/en/hooks). **Doc-drift caught in
+  recon:** a subagent claimed "hooks fully override lower scopes" — FALSE; hooks AGGREGATE across
+  user/project/local scopes (recorded so it isn't repeated).
+- **Traps proven empirically before shipping** (back side): google-java-format 1.35.0 rejects the `--`
+  filename separator (`unexpected flag: --`), and it needs a JDK ≥ 21 (`NoClassDefFoundError:
+  JCTree$JCAnyPattern` under the box-default JDK 17) plus five `jdk.compiler --add-exports` — so both
+  hooks resolve a JDK ≥ 21 portably ($JAVA_HOME → newest sdkman candidate → PATH; no hardcoded path).
