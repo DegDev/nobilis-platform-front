@@ -60,8 +60,8 @@ engine components. **Composition over inheritance. Opt-in by default.**
 
 ## Code conventions
 
-Full set — in `docs/conventions.md`. Machine enforcement: Prettier + angular-eslint, gated in CI.
-We don't rely on memory — tooling guarantees format.
+Full set — in `docs/conventions.md`. Formatting is enforced deterministically by a PostToolUse hook
+(prettier) — see `.claude/hooks/format-file.sh` and `docs/sources-log.md`; CI/eslint remains the backstop.
 
 - Follow the official Angular Style Guide (verify details against the live guide; v22 is recent).
 - Standard naming; standalone components; signals for state.
@@ -133,6 +133,7 @@ How the agent works on every task — independent of the prompt's wording.
   the main window with raw file dumps. Single-symbol lookups inline are fine.
 - **Don't spin.** Do not silently retry a failing build/test/tool more than 3 times — STOP, report
   what's stuck and what was tried.
+- **On compaction, preserve the load-bearing thread.** If the session auto-compacts, always keep: the current task's locked decisions, the current branch (`git branch --show-current`), the list of modified files, and the build/test command (`node_modules/.bin/ng build <project> --configuration=development` + Vitest). Dropping these forces re-derivation and risks acting on the wrong branch.
 
 ## Commit gate
 
