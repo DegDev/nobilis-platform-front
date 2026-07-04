@@ -1,0 +1,48 @@
+<form class="nb-form" (submit)="onSubmit($event)">
+  @for (field of fields(); track field.key; let i = $index) {
+    <div class="nb-form__field">
+      @if (customField(field.key); as custom) {
+        <ng-container
+          [ngTemplateOutlet]="custom"
+          [ngTemplateOutletContext]="{ $implicit: field, index: i }"
+        />
+      } @else {
+        <label class="nb-form__label" [for]="field.key">{{ field.label }}</label>
+
+        @switch (field.type) {
+          @case ('checkbox') {
+            <input [id]="field.key" type="checkbox" [formField]="booleanField(i)" />
+          }
+          @case ('number') {
+            <input [id]="field.key" pInputText type="number" [formField]="numberField(i)" />
+          }
+          @default {
+            <input [id]="field.key" pInputText [type]="field.type" [formField]="stringField(i)" />
+          }
+        }
+
+        @if (serverError(field.key); as serverMessage) {
+          <p-message severity="error" variant="simple" size="small">{{ serverMessage }}</p-message>
+        } @else if (fieldState(i)().touched() && fieldState(i)().invalid()) {
+          <p-message severity="error" variant="simple" size="small">
+            {{ field.requiredMessage ?? field.label }}
+          </p-message>
+        }
+      }
+    </div>
+  }
+
+  <div class="nb-form__actions">
+    <p-button
+      type="button"
+      [label]="cancelLabel()"
+      severity="secondary"
+      (onClick)="cancelled.emit()"
+    />
+    <p-button
+      type="submit"
+      [label]="submitLabel()"
+      [disabled]="formTree().invalid() || pending()"
+    />
+  </div>
+</form>

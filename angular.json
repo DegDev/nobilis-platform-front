@@ -2,7 +2,8 @@
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "cli": {
-    "packageManager": "npm"
+    "packageManager": "npm",
+    "analytics": false
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -62,7 +63,7 @@
                 "input": "projects/admin/public"
               }
             ],
-            "styles": ["projects/admin/src/styles.scss"]
+            "styles": ["node_modules/primeicons/primeicons.css", "projects/admin/src/styles.scss"]
           },
           "configurations": {
             "production": {
@@ -90,6 +91,9 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "proxyConfig": "projects/admin/proxy.conf.json"
+          },
           "configurations": {
             "production": {
               "buildTarget": "admin:build:production"

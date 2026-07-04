@@ -1,0 +1,38 @@
+<form class="login" (submit)="onSubmit($event)">
+  <h1 class="login__title">{{ strings.title }}</h1>
+
+  <label class="login__field">
+    <span>{{ strings.email }}</span>
+    <input pInputText type="email" autocomplete="username" [formField]="loginForm.email" />
+    @if (loginForm.email().touched() && loginForm.email().invalid()) {
+      <p-message severity="error" variant="simple" size="small">
+        {{ loginForm.email().errors()[0].message }}
+      </p-message>
+    }
+  </label>
+
+  <label class="login__field">
+    <span>{{ strings.password }}</span>
+    <input
+      pInputText
+      type="password"
+      autocomplete="current-password"
+      [formField]="loginForm.password"
+    />
+    @if (loginForm.password().touched() && loginForm.password().invalid()) {
+      <p-message severity="error" variant="simple" size="small">
+        {{ loginForm.password().errors()[0].message }}
+      </p-message>
+    }
+  </label>
+
+  @if (failed()) {
+    <p-message severity="error" variant="simple">{{ strings.failed }}</p-message>
+  }
+
+  <p-button
+    type="submit"
+    [label]="strings.submit"
+    [disabled]="loginForm().invalid() || submitting()"
+  />
+</form>

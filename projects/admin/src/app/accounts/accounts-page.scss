@@ -1,0 +1,43 @@
+.accounts {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.accounts__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.accounts__heading h1 {
+  margin: 0.25rem 0 0;
+}
+
+.accounts__back {
+  font-size: 0.875rem;
+}
+
+.accounts__chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.accounts__empty-cell {
+  color: var(--p-text-muted-color, #6b7280);
+}
+
+.accounts__empty-state {
+  margin-top: 1.5rem;
+  padding: 2rem;
+  text-align: center;
+  color: var(--p-text-muted-color, #6b7280);
+}
+
+.accounts__empty-state h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.125rem;
+}

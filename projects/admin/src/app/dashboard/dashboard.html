@@ -1,0 +1,12 @@
+<main class="dashboard">
+  <h1>{{ strings.title }}</h1>
+  <p>
+    {{ strings.signedInAs }}: <strong>{{ subject() }}</strong>
+  </p>
+  <nav class="dashboard__nav">
+    <p-button [label]="strings.settings" icon="pi pi-cog" [routerLink]="['/settings']" />
+    <p-button [label]="strings.roles" icon="pi pi-users" [routerLink]="['/roles']" />
+    <p-button [label]="strings.accounts" icon="pi pi-id-card" [routerLink]="['/accounts']" />
+  </nav>
+  <p-button [label]="strings.logout" severity="secondary" (onClick)="logout()" />
+</main>

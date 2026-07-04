@@ -1,0 +1,31 @@
+.roles {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.roles__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.roles__heading h1 {
+  margin: 0.25rem 0 0;
+}
+
+.roles__back {
+  font-size: 0.875rem;
+}
+
+.roles__perms {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.roles__empty {
+  color: var(--p-text-muted-color, #6b7280);
+}
