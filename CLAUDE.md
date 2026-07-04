@@ -133,6 +133,7 @@ How the agent works on every task — independent of the prompt's wording.
   the main window with raw file dumps. Single-symbol lookups inline are fine.
 - **Don't spin.** Do not silently retry a failing build/test/tool more than 3 times — STOP, report
   what's stuck and what was tried.
+- **On compaction, preserve the load-bearing thread.** If the session auto-compacts, always keep: the current task's locked decisions, the current branch (`git branch --show-current`), the list of modified files, and the build/test command (`node_modules/.bin/ng build <project> --configuration=development` + Vitest). Dropping these forces re-derivation and risks acting on the wrong branch.
 
 ## Commit gate
 
