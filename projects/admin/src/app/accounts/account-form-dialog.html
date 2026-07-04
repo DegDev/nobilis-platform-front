@@ -1,0 +1,71 @@
+<div class="nb-account-dialog__identities">
+  <span class="nb-form__label">{{ strings.identitiesLabel }}</span>
+  @if (identities.length) {
+    <ul class="nb-account-dialog__identity-list">
+      @for (identity of identities; track identity.provider + identity.externalId) {
+        <li>{{ identity.provider }}: {{ identity.externalId }}</li>
+      }
+    </ul>
+  } @else {
+    <p class="nb-account-dialog__identity-empty">{{ strings.noIdentitiesInDialog }}</p>
+  }
+  <p-message severity="secondary" variant="simple" size="small">
+    {{ strings.identitiesReadonlyHint }}
+  </p-message>
+</div>
+
+@if (formError(); as message) {
+  <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
+}
+
+<nb-generic-form
+  [fields]="fields()"
+  [serverErrors]="serverErrors()"
+  [pending]="pending()"
+  [submitLabel]="strings.save"
+  [cancelLabel]="strings.cancel"
+  (save)="onSave()"
+  (cancelled)="onCancel()"
+>
+  <ng-template nbFieldTemplate="status" let-field>
+    <label class="nb-form__label" [for]="field.key">{{ field.label }}</label>
+    <p-select
+      [inputId]="field.key"
+      [options]="statusOptions"
+      [ngModel]="status()"
+      (ngModelChange)="status.set($event)"
+      [placeholder]="strings.statusPlaceholder"
+      appendTo="body"
+    />
+  </ng-template>
+
+  <ng-template nbFieldTemplate="realms" let-field>
+    <label class="nb-form__label" [for]="field.key">{{ field.label }}</label>
+    <p-multiSelect
+      [inputId]="field.key"
+      [options]="realmOptions"
+      [ngModel]="realms()"
+      (ngModelChange)="realms.set($event)"
+      [placeholder]="strings.realmsPlaceholder"
+      display="chip"
+      [showToggleAll]="false"
+      appendTo="body"
+    />
+  </ng-template>
+
+  <ng-template nbFieldTemplate="roles" let-field>
+    <label class="nb-form__label" [for]="field.key">{{ field.label }}</label>
+    <p-multiSelect
+      [inputId]="field.key"
+      [options]="roleOptions()"
+      optionLabel="name"
+      optionValue="id"
+      [ngModel]="roleIds()"
+      (ngModelChange)="roleIds.set($event)"
+      [placeholder]="strings.rolesPlaceholder"
+      display="chip"
+      [showToggleAll]="false"
+      appendTo="body"
+    />
+  </ng-template>
+</nb-generic-form>

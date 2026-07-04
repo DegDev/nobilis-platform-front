@@ -371,3 +371,47 @@ settings' string `key`), matching the backend `RoleController` `/{id:\d+}` paths
   (`page.locator('p-multiselect')`) to open the panel; options render in a body-level overlay, so
   page-scoped `getByRole('option')` finds them. Product code was correct — a test-only selector fix.
   The accounts screen (4e) uses the same pattern, so target the trigger there too.
+
+## 2026-07-04 — Admin: accounts management screen (M03 pass 4e) on the CRUD kit
+
+Third screen on the common CRUD kit (after settings + roles): `accounts/` feature in the admin app —
+`AccountsApi` (`/admin/api/accounts`, `PagedModel`/`PageableQuery`), a `GenericTable` list (id,
+status badge, realms/roles/identities chips) and an `AccountFormDialog` (`GenericForm` +
+`CrudDialog`). Mirrors the roles feature. Manages EXISTING accounts only — no create, and no delete
+verb (soft-delete = choosing `BLOCKED` in the status field, per the 4d contract).
+
+- **THREE escape-hatch controls, all `nbFieldTemplate` + plain `[ngModel]`/`(ngModelChange)`→signal
+  (NOT `[formField]`).** The 4c multiselect verdict extended: a PrimeNG `p-select` (status) + two
+  `p-multiSelect`s (realms static enum, roles fetched). Verified against the v21.1.9 typings that
+  `Select extends BaseInput implements ControlValueAccessor` with plain `options`/`optionLabel`/
+  `optionValue` inputs — the same escape-hatch shape as `MultiSelect`; the Signal-Forms × PrimeNG
+  CVA interop stays quarantined. **Kit-gap noted:** the kit's `FormFieldType` has no `'select'`, so
+  status could not be a built-in field — hence all three go through the outlet (zero kit changes; a
+  `'select'` built-in could be promoted later, out of scope). Roles bound **by id**
+  (`optionValue="id"`, model `number[]`) per the 4d update contract; realms by enum name.
+- **Model vs update shape — the first front consumer of the 4d accounts API.** `AccountModel` mirrors
+  `AccountDto` faithfully, keeping `roles: RoleRef[]` (`{id,code,name}`) so the table/dialog show role
+  NAMES; the update extracts `roleIds = roles.map(r => r.id)`. No `get(id)` API method — the list row
+  already carries the full `AccountDto`, so the edit dialog seeds from the row (a deliberate omission
+  vs the build sketch). Role OPTIONS come from the roles LIST endpoint (paged) fetched at `size=200`
+  — the engine's catalog is small; a many-role domain would page. `secret_hash` never appears: the
+  DTO's `IdentityRef` is `{provider, externalId}` only, so the front literally cannot render it, and
+  identities are shown read-only (identity/login management is deferred).
+- **Empty-list reality (config-admin has NO account row).** The configured admin authenticates with
+  no `account` row (4d), so a fresh database lists ZERO accounts — the normal state, not an error.
+  The screen renders an explanatory empty-state (`loaded() && totalRecords() === 0`, a `loaded`
+  signal so it never flashes before the first load). **This drove the e2e decision:** with no create
+  path on this screen, a self-contained credentialed spec cannot seed a row to mutate, so
+  `e2e/admin-accounts.spec.ts` is minimal — an always-on anonymous→login guard test plus a
+  credentialed mounts+list-renders test (skips without `NOBILIS_E2E_*`); the status/realms/roles
+  mutate round-trip waits for account creation (a later milestone) and is proven instead by a
+  component test + a route-mocked live playwright run.
+- **Verification.** `ng build admin` (AOT, `accounts-page` lazy chunk) + `ng lint admin` + `ng test
+  admin` (6 specs incl. two accounts specs: the three controls render options + correct PUT body;
+  the empty-state renders) all green. Live playwright (route-mocked, no backend): guard redirect;
+  table with status badge + chips (identity chip shows the provider only); the edit dialog's status
+  select (3 values), realms multiselect (ADMIN/CLIENT), roles multiselect (fetched, by name),
+  read-only identities; `PUT /admin/api/accounts/7` body `{status:"BLOCKED", realms:["ADMIN","CLIENT"],
+  roleIds:[1,2]}` (roles by id, realms by name); dialog closes + list reloads; and the empty-state
+  when the list is empty. Multiselect e2e targets the visible `p-multiselect`/`p-select` trigger, not
+  the hidden `inputId` input (the 4c lesson).

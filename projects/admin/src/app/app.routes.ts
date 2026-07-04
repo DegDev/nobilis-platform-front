@@ -21,6 +21,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./roles/roles-page').then((m) => m.RolesPage),
   },
+  {
+    path: 'accounts',
+    canActivate: [authGuard],
+    loadComponent: () => import('./accounts/accounts-page').then((m) => m.AccountsPage),
+  },
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'dashboard' },
 ];

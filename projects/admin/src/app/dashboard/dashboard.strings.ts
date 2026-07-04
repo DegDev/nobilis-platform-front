@@ -7,5 +7,6 @@ export const DASHBOARD_STRINGS = {
   signedInAs: 'Signed in as',
   settings: 'Settings',
   roles: 'Roles',
+  accounts: 'Accounts',
   logout: 'Sign out',
 } as const;

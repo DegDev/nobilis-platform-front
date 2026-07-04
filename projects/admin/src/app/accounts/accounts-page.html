@@ -1,0 +1,66 @@
+<main class="accounts">
+  <header class="accounts__header">
+    <div class="accounts__heading">
+      <a class="accounts__back" [routerLink]="['/dashboard']">{{ strings.back }}</a>
+      <h1>{{ strings.title }}</h1>
+    </div>
+  </header>
+
+  <nb-generic-table
+    [columns]="columns"
+    [value]="rows()"
+    [actions]="actions"
+    [lazy]="true"
+    [totalRecords]="totalRecords()"
+    [loading]="loading()"
+    (lazyLoad)="load($event)"
+    (action)="onAction($event)"
+  >
+    <ng-template nbColumnCell="status" let-row>
+      <p-tag [severity]="statusSeverity(row.status)" [value]="row.status" />
+    </ng-template>
+
+    <ng-template nbColumnCell="realms" let-row>
+      @if (row.realms.length) {
+        <span class="accounts__chips">
+          @for (realm of row.realms; track realm) {
+            <p-tag severity="secondary" [value]="realm" />
+          }
+        </span>
+      } @else {
+        <span class="accounts__empty-cell">{{ strings.noRealms }}</span>
+      }
+    </ng-template>
+
+    <ng-template nbColumnCell="roles" let-row>
+      @if (row.roles.length) {
+        <span class="accounts__chips">
+          @for (role of row.roles; track role.id) {
+            <p-tag severity="secondary" [value]="role.name" />
+          }
+        </span>
+      } @else {
+        <span class="accounts__empty-cell">{{ strings.noRoles }}</span>
+      }
+    </ng-template>
+
+    <ng-template nbColumnCell="identities" let-row>
+      @if (row.identities.length) {
+        <span class="accounts__chips">
+          @for (identity of row.identities; track identity.provider + identity.externalId) {
+            <p-tag severity="info" [value]="identity.provider" />
+          }
+        </span>
+      } @else {
+        <span class="accounts__empty-cell">{{ strings.noIdentities }}</span>
+      }
+    </ng-template>
+  </nb-generic-table>
+
+  @if (loaded() && totalRecords() === 0) {
+    <div class="accounts__empty-state">
+      <h2>{{ strings.emptyTitle }}</h2>
+      <p>{{ strings.emptyBody }}</p>
+    </div>
+  }
+</main>
