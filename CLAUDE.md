@@ -60,8 +60,8 @@ engine components. **Composition over inheritance. Opt-in by default.**
 
 ## Code conventions
 
-Full set — in `docs/conventions.md`. Machine enforcement: Prettier + angular-eslint, gated in CI.
-We don't rely on memory — tooling guarantees format.
+Full set — in `docs/conventions.md`. Formatting is enforced deterministically by a PostToolUse hook
+(prettier) — see `.claude/hooks/format-file.sh` and `docs/sources-log.md`; CI/eslint remains the backstop.
 
 - Follow the official Angular Style Guide (verify details against the live guide; v22 is recent).
 - Standard naming; standalone components; signals for state.
