@@ -119,6 +119,11 @@ signals throughout.
   PrimeNG 21's `cdk ^21`. It **compiles (AOT) and runs** — the login page renders and an interactive
   submit is proven by the Chromium e2e. Revisit when PrimeNG ships an Angular-22 peer. → PrimeNG
   installation docs; npm peer-dependency resolution.
+- **`.npmrc` with `legacy-peer-deps=true` (repo root)** — the peer gap above was only bridged by a
+  manual `--legacy-peer-deps` flag on local installs, so CI (`.github/workflows/ci.yml:25`, plain
+  `npm ci`) hit `ERESOLVE` on `primeng@21.1.9`→`@angular/common ^21`. Committing the flag as project
+  config makes every environment resolve identically without a per-command flag. Remove together with
+  the `--legacy-peer-deps` note above once PrimeNG ships an Angular-22 peer. → npm `.npmrc` config docs.
 - **Theme package is `@primeuix/themes`, not `@primeng/themes`** — `providePrimeNG({ theme: { preset:
   Aura } })` + `provideAnimationsAsync()` (`app.config.ts:14-16`), importing `Aura` from
   `@primeuix/themes/aura` (`:5`). Doc-drift noted: `CLAUDE.md` said `@primeng/themes` (stale — the
