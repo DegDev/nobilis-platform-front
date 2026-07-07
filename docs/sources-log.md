@@ -444,3 +444,35 @@ git hooks). Turns the advisory format/verify CLAUDE.md rules into deterministic 
   filename separator (`unexpected flag: --`), and it needs a JDK ≥ 21 (`NoClassDefFoundError:
   JCTree$JCAnyPattern` under the box-default JDK 17) plus five `jdk.compiler --add-exports` — so both
   hooks resolve a JDK ≥ 21 portably ($JAVA_HOME → newest sdkman candidate → PATH; no hardcoded path).
+
+## 2026-07-07 — Methodology backport + front canon becomes a pointer (SSOT in back)
+
+Eight durable prompting/diagnosis lessons from sibling projects — accumulated past the current
+recon-first canon — were folded into the canon as living-standard extensions (the canon invites
+"extend as new patterns prove out"), rewritten in English and project-agnostic (no external-project
+literals — pattern only, clean-room). The canon edit lands in the **back** repo
+(`nobilis-platform-back/docs/process/prompting-methodology.md`); its full provenance row is in the
+back `sources-log.md`.
+
+### Front-specific structural change
+
+- **`docs/process/prompting-methodology.md` is now a thin POINTER**, not a full byte-identical copy.
+  The canon is single and lives in the back repo (the portable layer, shared by both repos); the
+  front file references it (a relative sibling link + the repo-named path) and holds only
+  front-specific lessons if any arise. This adopts the SSOT model (edit a shared rule once in back),
+  replacing the prior "byte-identical in both repos" invariant for this one file — a copy would drift
+  from the canon.
+- **Caveat (relative link):** the sibling link resolves only when both repos are checked out side by
+  side; a standalone clone of the front repo (or the GitHub web view) will not follow it, but the
+  repo-named path in the pointer text still identifies the canon unambiguously.
+
+### Folded rules (summary; full text in the back canon)
+
+Deterministic gates as hooks; deployment-requirements (a `## Deployment requirements` contract
+table + the prod config-mechanism as a GATE-0 evidence class + a live process start as a DoD item —
+"a green build ≠ a running process"); questions-gate-the-prompt hardened for HEAVY/config/deploy;
+the portable layer is project-agnostic; KISS (recon is not the default); anti-overhead (a locked
+plan → command directly); branch base = the dependency's location; editing shared/base code =
+HEAVY with GATE-0 asking WHY. **Deliberately dropped:** a source rule premised on "the main line =
+auto-deploy to clients" — contradicts model C (main merges freely; release = manual `mvn deploy`);
+only its portable branch-topology core was kept.
