@@ -491,3 +491,18 @@ plan → command directly); branch base = the dependency's location; editing sha
 HEAVY with GATE-0 asking WHY. **Deliberately dropped:** a source rule premised on "the main line =
 auto-deploy to clients" — contradicts model C (main merges freely; release = manual `mvn deploy`);
 only its portable branch-topology core was kept.
+
+---
+
+## 2026-07-09 — Portal: first real route (M03, app-host-boot)
+
+The `app` portal gets its first route — a static `Landing` placeholder at `''` plus a `**` wildcard
+redirect home, mirroring the tail of `projects/admin/src/app/app.routes.ts`. Paired with the backend
+pass that made the `app` host boot at all (see `nobilis-platform-back/docs/sources-log.md`).
+
+| Decision | Source / rationale |
+| --- | --- |
+| The landing is STATIC — no `httpResource`, no HTTP call | Its content is CMS-driven per the milestone, and the CMS does not exist. Consuming an endpoint whose contract would be guessed ahead of its source is the speculative-infrastructure defect (BL-001's own reasoning). The backend's `/api/health` probe is deliberately unrelated: it proves the host is alive, not that this page has content. |
+| `provideHttpClient` and PrimeNG stay OUT of `projects/app/src/app/app.config.ts` | Only the rejected content-endpoint option would have needed them. Adding either now would be configuration for a capability the portal does not use. `admin`'s config carries both because its screens actually call the API and render PrimeNG widgets. |
+| Strings live in `landing/landing.strings.ts`, not inline in the template | Same i18n seam as every admin screen (`dashboard.strings.ts`, `settings.strings.ts`, …): user-visible text is isolated in one place so a future i18n mechanism has a single point to consume, even though this screen's content is a placeholder. |
+| The shell's `<h1>{{ title() }}</h1>` was removed from `app.html` (with the now-dead `title` signal and the spec case asserting it) | Angular CLI scaffolding, harmless while `routes` was empty. Once `''` renders `Landing` — which owns its own `<h1>` — the shell's heading would print a literal "app" above every screen and give each page two `<h1>`s. Verified in the browser via playwright: one `h1`, and `/no-such-page` redirects to `/` with zero console errors. |
