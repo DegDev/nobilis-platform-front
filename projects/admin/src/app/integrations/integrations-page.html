@@ -1,0 +1,68 @@
+<main class="integrations">
+  <header class="integrations__header">
+    <div class="integrations__heading">
+      <a class="integrations__back" [routerLink]="['/dashboard']">{{ strings.back }}</a>
+      <h1>{{ strings.title }}</h1>
+    </div>
+  </header>
+
+  <div class="integrations__grid">
+    @for (entry of providers(); track entry.provider) {
+      <p-card [header]="providerLabel(entry.provider)">
+        <div class="integrations__status">
+          @if (entry.configured) {
+            <p-tag severity="success" icon="pi pi-check" [value]="strings.statusSet" />
+          } @else {
+            <p-tag severity="secondary" [value]="strings.statusNotSet" />
+          }
+        </div>
+        <p class="integrations__hint">{{ strings.replaceHint }}</p>
+        <label [for]="entry.provider + '-value'">{{ strings.valueLabel }}</label>
+        <input
+          [id]="entry.provider + '-value'"
+          pInputText
+          type="password"
+          autocomplete="off"
+          [placeholder]="strings.valuePlaceholder"
+          [ngModel]="editValue(entry.provider)"
+          (ngModelChange)="setEditValue(entry.provider, $event)"
+        />
+        <p-button
+          [label]="strings.save"
+          [disabled]="!editValue(entry.provider)"
+          [loading]="!!saving()[entry.provider]"
+          (onClick)="save(entry)"
+        />
+      </p-card>
+    }
+
+    <p-card [header]="strings.addProviderTitle">
+      <label for="new-provider">{{ strings.providerLabel }}</label>
+      <input
+        id="new-provider"
+        pInputText
+        type="text"
+        [placeholder]="strings.providerPlaceholder"
+        [ngModel]="newProvider()"
+        (ngModelChange)="newProvider.set($event)"
+      />
+      <label for="new-value">{{ strings.valueLabel }}</label>
+      <input
+        id="new-value"
+        pInputText
+        type="password"
+        autocomplete="off"
+        [ngModel]="newValue()"
+        (ngModelChange)="newValue.set($event)"
+      />
+      <p-button
+        [label]="strings.add"
+        [disabled]="!newProvider().trim() || !newValue()"
+        [loading]="addPending()"
+        (onClick)="addProvider()"
+      />
+    </p-card>
+  </div>
+
+  <p-toast />
+</main>
