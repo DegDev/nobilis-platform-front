@@ -1,0 +1,44 @@
+.integrations {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.integrations__header {
+  margin-bottom: 1.5rem;
+}
+
+.integrations__heading h1 {
+  margin: 0.25rem 0 0;
+}
+
+.integrations__back {
+  font-size: 0.875rem;
+}
+
+.integrations__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: 1rem;
+}
+
+.integrations__status {
+  margin-bottom: 0.75rem;
+}
+
+.integrations__hint {
+  color: var(--p-text-muted-color, #6b7280);
+  font-size: 0.8125rem;
+  margin: 0 0 0.75rem;
+}
+
+p-card label {
+  display: block;
+  margin: 0.5rem 0 0.25rem;
+  font-size: 0.875rem;
+}
+
+p-card input {
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
