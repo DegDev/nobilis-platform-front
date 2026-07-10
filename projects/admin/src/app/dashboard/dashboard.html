@@ -7,6 +7,11 @@
     <p-button [label]="strings.settings" icon="pi pi-cog" [routerLink]="['/settings']" />
     <p-button [label]="strings.roles" icon="pi pi-users" [routerLink]="['/roles']" />
     <p-button [label]="strings.accounts" icon="pi pi-id-card" [routerLink]="['/accounts']" />
+    <p-button
+      [label]="strings.contentBlocks"
+      icon="pi pi-file-edit"
+      [routerLink]="['/content-blocks']"
+    />
   </nav>
   <p-button [label]="strings.logout" severity="secondary" (onClick)="logout()" />
 </main>

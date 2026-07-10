@@ -13,6 +13,7 @@ import { FieldTree, FormField, applyEach, applyWhen, form, required } from '@ang
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
+import { TextareaModule } from 'primeng/textarea';
 import { FieldTemplateDirective } from './field-template.directive';
 import { FormFieldState } from './form-field';
 
@@ -23,14 +24,22 @@ import { FormFieldState } from './form-field';
  * needs the config at construction time. Server-side RFC 9457 field errors wire per field via
  * `serverErrors`; custom fields are plain Angular via the `nbFieldTemplate` escape hatch.
  *
- * <p>Only native inputs carry `[formField]` (the `pInputText`-styled path proven in milestone 01),
- * not PrimeNG form controls, whose control-value-accessor interop with Signal Forms is unverified.
+ * <p>Only native form elements (`input`/`textarea`/`select`) carry `[formField]` (the `pInputText`-
+ * styled path proven in milestone 01), not PrimeNG form controls, whose control-value-accessor
+ * interop with Signal Forms is unverified.
  * Ships no strings — labels/messages come from config. Zoneless/OnPush.
  */
 @Component({
   selector: 'nb-generic-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgTemplateOutlet, FormField, InputTextModule, ButtonModule, MessageModule],
+  imports: [
+    NgTemplateOutlet,
+    FormField,
+    InputTextModule,
+    TextareaModule,
+    ButtonModule,
+    MessageModule,
+  ],
   templateUrl: './generic-form.html',
 })
 export class GenericForm {
@@ -70,6 +79,11 @@ export class GenericForm {
 
   protected customField(key: string): TemplateRef<unknown> | null {
     return this.customByKey().get(key) ?? null;
+  }
+
+  /** Choices for a `'select'` field, read straight off its config (not part of the value tree). */
+  protected options(index: number) {
+    return this.fields()[index].options ?? [];
   }
 
   // The model value is a heterogeneous union, but `[formField]` on a native input is typed by the

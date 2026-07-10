@@ -16,6 +16,16 @@
           @case ('number') {
             <input [id]="field.key" pInputText type="number" [formField]="numberField(i)" />
           }
+          @case ('textarea') {
+            <textarea [id]="field.key" pTextarea [formField]="stringField(i)"></textarea>
+          }
+          @case ('select') {
+            <select [id]="field.key" [formField]="stringField(i)">
+              @for (option of options(i); track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          }
           @default {
             <input [id]="field.key" pInputText [type]="field.type" [formField]="stringField(i)" />
           }

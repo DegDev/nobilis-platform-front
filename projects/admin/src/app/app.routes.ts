@@ -26,6 +26,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./accounts/accounts-page').then((m) => m.AccountsPage),
   },
+  {
+    path: 'content-blocks',
+    canActivate: [authGuard],
+    loadComponent: () => import('./cms/content-blocks-page').then((m) => m.ContentBlocksPage),
+  },
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'dashboard' },
 ];

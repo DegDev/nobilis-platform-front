@@ -1,5 +1,11 @@
 /** The kind of control rendered for a field. */
-export type FormFieldType = 'text' | 'password' | 'number' | 'checkbox';
+export type FormFieldType = 'text' | 'password' | 'number' | 'checkbox' | 'textarea' | 'select';
+
+/** One choice for a `'select'` field. */
+export interface FormFieldOption {
+  readonly label: string;
+  readonly value: string;
+}
 
 /**
  * One form field expressed AS DATA — its config and its current value together in a single record.
@@ -23,4 +29,6 @@ export interface FormFieldState {
   readonly required: boolean;
   readonly requiredMessage?: string;
   value: string | number | boolean | null;
+  /** Choices for a `'select'` field; ignored for every other type. */
+  readonly options?: readonly FormFieldOption[];
 }
