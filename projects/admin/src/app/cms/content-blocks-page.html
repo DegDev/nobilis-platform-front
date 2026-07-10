@@ -1,0 +1,39 @@
+<main class="content-blocks">
+  <header class="content-blocks__header">
+    <div class="content-blocks__heading">
+      <a class="content-blocks__back" [routerLink]="['/dashboard']">{{ strings.back }}</a>
+      <h1>{{ strings.title }}</h1>
+    </div>
+    <p-button [label]="strings.newBlock" icon="pi pi-plus" (onClick)="create()" />
+  </header>
+
+  <nb-generic-table
+    [columns]="columns"
+    [value]="rows()"
+    [actions]="actions"
+    [lazy]="true"
+    [totalRecords]="totalRecords()"
+    [loading]="loading()"
+    (lazyLoad)="load($event)"
+    (action)="onAction($event)"
+  >
+    <ng-template nbColumnCell="status" let-row>
+      <p-tag
+        [severity]="row.status === 'PUBLISHED' ? 'success' : 'secondary'"
+        [value]="row.status"
+      />
+    </ng-template>
+
+    <ng-template nbColumnCell="translations" let-row>
+      @for (locale of locales; track locale) {
+        <p-tag
+          class="content-blocks__locale-tag"
+          [severity]="row.translations[locale] ? 'success' : 'secondary'"
+          [value]="locale"
+        />
+      }
+    </ng-template>
+  </nb-generic-table>
+
+  <p-confirmdialog />
+</main>

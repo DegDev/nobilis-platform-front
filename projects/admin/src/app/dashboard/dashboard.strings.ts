@@ -8,5 +8,6 @@ export const DASHBOARD_STRINGS = {
   settings: 'Settings',
   roles: 'Roles',
   accounts: 'Accounts',
+  contentBlocks: 'Content blocks',
   logout: 'Sign out',
 } as const;

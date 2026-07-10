@@ -1,0 +1,9 @@
+<nb-generic-form
+  [fields]="fields()"
+  [serverErrors]="serverErrors()"
+  [pending]="pending()"
+  [submitLabel]="strings.save"
+  [cancelLabel]="strings.cancel"
+  (save)="onSave($event)"
+  (cancelled)="onCancel()"
+/>

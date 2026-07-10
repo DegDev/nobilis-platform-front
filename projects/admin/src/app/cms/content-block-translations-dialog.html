@@ -1,0 +1,38 @@
+<div class="cb-translations">
+  @for (locale of locales; track locale) {
+    <div class="cb-translations__locale">
+      <label class="cb-translations__label" [for]="'translation-' + locale">{{ locale }}</label>
+      <textarea
+        [id]="'translation-' + locale"
+        pTextarea
+        rows="4"
+        [value]="state()[locale].body"
+        (input)="setBody(locale, $any($event.target).value)"
+      ></textarea>
+
+      @if (state()[locale].error; as error) {
+        <p-message severity="error" variant="simple" size="small">{{ error }}</p-message>
+      }
+
+      <div class="cb-translations__actions">
+        <p-button
+          [label]="strings.translationSave"
+          size="small"
+          [disabled]="state()[locale].pending"
+          (onClick)="save(locale)"
+        />
+        <p-button
+          [label]="strings.translationClear"
+          size="small"
+          severity="secondary"
+          [disabled]="state()[locale].pending || !state()[locale].body"
+          (onClick)="clear(locale)"
+        />
+      </div>
+    </div>
+  }
+
+  <div class="cb-translations__footer">
+    <p-button [label]="strings.close" severity="secondary" (onClick)="close()" />
+  </div>
+</div>
