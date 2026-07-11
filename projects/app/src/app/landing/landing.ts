@@ -1,12 +1,16 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { LANDING_STRINGS } from './landing.strings';
+import { PortalContentApi } from './portal-content-api';
+
+/** The CMS key for the landing hero block; the admin creates its content via the CMS screen. */
+const HERO_KEY = 'landing.hero';
 
 /**
- * The portal's landing page: static placeholder markup, no data call. The banners and blocks the
- * milestone describes are CMS-driven, and the CMS does not exist yet — so this renders fixed
- * content rather than consuming an endpoint whose contract would be guessed ahead of its source.
- * The host's `/api/health` probe is deliberately unrelated: it proves the backend is alive, not
- * that this page has content.
+ * The portal's landing page: fetches the hero content block from the CMS and renders it. If the
+ * block isn't PUBLISHED yet (fresh install, nothing authored) the read resolves to `null` and the
+ * page falls back to a static placeholder — it must never look broken just because the admin
+ * hasn't published anything yet.
  */
 @Component({
   selector: 'nb-landing',
@@ -15,4 +19,7 @@ import { LANDING_STRINGS } from './landing.strings';
 })
 export class Landing {
   protected readonly strings = LANDING_STRINGS;
+
+  private readonly contentApi = inject(PortalContentApi);
+  protected readonly heroBody = toSignal(this.contentApi.read(HERO_KEY), { initialValue: null });
 }
