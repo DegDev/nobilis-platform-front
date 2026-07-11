@@ -15,13 +15,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { TabsModule } from 'primeng/tabs';
 import { TagModule } from 'primeng/tag';
-import {
-  NotificationLocale,
-  NotificationTemplate,
-  NotificationType,
-  NOTIFICATION_LOCALES,
-  Transport,
-} from './notification';
+import { NotificationTemplate, NotificationType, NOTIFICATION_LOCALES } from './notification';
 import { NotificationsApi } from './notifications-api';
 import { NOTIFICATIONS_STRINGS } from './notifications.strings';
 import {
