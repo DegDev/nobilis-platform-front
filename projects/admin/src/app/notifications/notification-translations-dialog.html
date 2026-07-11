@@ -1,0 +1,50 @@
+<div class="nt-translations">
+  @for (locale of locales; track locale) {
+    <div class="nt-translations__locale">
+      <label class="nt-translations__label" [for]="'translation-' + locale + '-subject'">{{
+        locale
+      }}</label>
+
+      <label [for]="'translation-' + locale + '-subject'">{{ strings.fieldSubject }}</label>
+      <input
+        [id]="'translation-' + locale + '-subject'"
+        pInputText
+        [value]="state()[locale].subject"
+        (input)="setSubject(locale, $any($event.target).value)"
+      />
+
+      <label [for]="'translation-' + locale + '-body'">{{ strings.fieldBody }}</label>
+      <textarea
+        [id]="'translation-' + locale + '-body'"
+        pTextarea
+        rows="4"
+        [value]="state()[locale].body"
+        (input)="setBody(locale, $any($event.target).value)"
+      ></textarea>
+
+      @if (state()[locale].error; as error) {
+        <p-message severity="error" variant="simple" size="small">{{ error }}</p-message>
+      }
+
+      <div class="nt-translations__actions">
+        <p-button
+          [label]="strings.translationSave"
+          size="small"
+          [disabled]="state()[locale].pending || !state()[locale].body"
+          (onClick)="save(locale)"
+        />
+        <p-button
+          [label]="strings.translationClear"
+          size="small"
+          severity="secondary"
+          [disabled]="state()[locale].pending || !state()[locale].body"
+          (onClick)="clear(locale)"
+        />
+      </div>
+    </div>
+  }
+
+  <div class="nt-translations__footer">
+    <p-button [label]="strings.close" severity="secondary" (onClick)="close()" />
+  </div>
+</div>
