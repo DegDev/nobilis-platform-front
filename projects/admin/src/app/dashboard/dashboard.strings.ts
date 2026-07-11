@@ -10,5 +10,6 @@ export const DASHBOARD_STRINGS = {
   accounts: 'Accounts',
   contentBlocks: 'Content blocks',
   integrations: 'Integrations',
+  notifications: 'Notifications',
   logout: 'Sign out',
 } as const;

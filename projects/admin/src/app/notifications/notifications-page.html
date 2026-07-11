@@ -1,0 +1,67 @@
+<main class="notifications">
+  <header class="notifications__header">
+    <div class="notifications__heading">
+      <a class="notifications__back" [routerLink]="['/dashboard']">{{ strings.back }}</a>
+      <h1>{{ strings.title }}</h1>
+    </div>
+  </header>
+
+  <p-tabs value="types">
+    <p-tablist>
+      <p-tab value="types">{{ strings.tabTypes }}</p-tab>
+      <p-tab value="templates">{{ strings.tabTemplates }}</p-tab>
+    </p-tablist>
+    <p-tabpanels>
+      <p-tabpanel value="types">
+        <header class="notifications__toolbar">
+          <p-button [label]="strings.newType" icon="pi pi-plus" (onClick)="createType()" />
+        </header>
+        <nb-generic-table
+          [columns]="typeColumns"
+          [value]="typeRows()"
+          [actions]="typeActions"
+          [lazy]="true"
+          [totalRecords]="typeTotal()"
+          [loading]="typeLoading()"
+          (lazyLoad)="loadTypes($event)"
+          (action)="onTypeAction($event)"
+        >
+          <ng-template nbColumnCell="enabled" let-row>
+            <p-tag
+              [severity]="row.enabled ? 'success' : 'secondary'"
+              [value]="row.enabled ? strings.enabled : strings.disabled"
+            />
+          </ng-template>
+        </nb-generic-table>
+      </p-tabpanel>
+
+      <p-tabpanel value="templates">
+        <header class="notifications__toolbar">
+          <p-button [label]="strings.newTemplate" icon="pi pi-plus" (onClick)="createTemplate()" />
+        </header>
+        <nb-generic-table
+          [columns]="templateColumns"
+          [value]="templateRows()"
+          [actions]="templateActions"
+          [lazy]="true"
+          [totalRecords]="templateTotal()"
+          [loading]="templateLoading()"
+          (lazyLoad)="loadTemplates($event)"
+          (action)="onTemplateAction($event)"
+        >
+          <ng-template nbColumnCell="translations" let-row>
+            @for (locale of locales; track locale) {
+              <p-tag
+                class="notifications__locale-tag"
+                [severity]="row.translations[locale] ? 'success' : 'secondary'"
+                [value]="locale"
+              />
+            }
+          </ng-template>
+        </nb-generic-table>
+      </p-tabpanel>
+    </p-tabpanels>
+  </p-tabs>
+
+  <p-confirmdialog />
+</main>

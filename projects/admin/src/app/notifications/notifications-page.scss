@@ -1,0 +1,32 @@
+notifications-page,
+:host {
+  display: block;
+}
+
+.notifications {
+  padding: 1.5rem;
+
+  &__header {
+    margin-bottom: 1rem;
+  }
+
+  &__heading {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__back {
+    color: var(--text-color-secondary, #6b7280);
+    text-decoration: none;
+    font-size: 0.875rem;
+  }
+
+  &__toolbar {
+    margin-bottom: 1rem;
+  }
+
+  &__locale-tag {
+    margin-right: 0.25rem;
+  }
+}

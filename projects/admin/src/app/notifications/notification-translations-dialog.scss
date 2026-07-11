@@ -1,0 +1,31 @@
+.nt-translations {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.nt-translations__locale {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.nt-translations__label {
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.nt-translations__locale input,
+.nt-translations__locale textarea {
+  width: 100%;
+}
+
+.nt-translations__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.nt-translations__footer {
+  display: flex;
+  justify-content: flex-end;
+}
