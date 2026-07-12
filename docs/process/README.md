@@ -7,3 +7,4 @@ build this kind of thing".
 - [two-track-workflow.md](./two-track-workflow.md) — pick the depth of work (light vs heavy) by task weight.
 - [prompt-structure.md](./prompt-structure.md) — how to shape an agent prompt (recon / build / docs / fix).
 - [prompting-methodology.md](./prompting-methodology.md) — the full recon-first methodology (principles + all prompt types) the two above distill.
+- [codex-harness-parity.md](./codex-harness-parity.md) — pointer to the back-repo canon mapping the Claude Code harness onto Codex CLI (not duplicated here).
