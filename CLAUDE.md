@@ -49,6 +49,14 @@ skill `.claude/skills/angular22-verification/SKILL.md` — loaded on demand.
 
 Recurring engine patterns become on-demand skills in `.claude/skills/`, not new CLAUDE.md prose.
 
+## i18n & encoding (load-bearing)
+
+Native language is EN (public international engine); RU/RO are overlay translations layered on top.
+Static UI i18n = `@angular/localize` runtime `loadTranslations` (NOT ngx-translate/build-per-locale);
+`?locale=` is the one transport to the backend. **ONLY UTF-8, everywhere** — source, templates, and
+`assets/i18n/*.json` dictionaries are UTF-8, so Cyrillic/Romanian never corrupts. A file or response
+that mangles non-ASCII under a non-UTF-8 locale is a defect even if a UTF-8 machine hides it.
+
 ## Boundary: engine vs domain
 
 This repo is ONLY the engine UI (capabilities). Domain specifics (the order/request form, master

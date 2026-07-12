@@ -3,13 +3,13 @@
  * seam rationale as the login strings).
  */
 export const DASHBOARD_STRINGS = {
-  title: 'Admin dashboard',
-  signedInAs: 'Signed in as',
-  settings: 'Settings',
-  roles: 'Roles',
-  accounts: 'Accounts',
-  contentBlocks: 'Content blocks',
-  integrations: 'Integrations',
-  notifications: 'Notifications',
-  logout: 'Sign out',
+  title: $localize`:@@AdminDashboardTitle:Admin dashboard`,
+  signedInAs: $localize`:@@SignedInAs:Signed in as`,
+  settings: $localize`:@@Settings:Settings`,
+  roles: $localize`:@@Roles:Roles`,
+  accounts: $localize`:@@Accounts:Accounts`,
+  contentBlocks: $localize`:@@ContentBlocks:Content blocks`,
+  integrations: $localize`:@@Integrations:Integrations`,
+  notifications: $localize`:@@Notifications:Notifications`,
+  logout: $localize`:@@SignOut:Sign out`,
 } as const;

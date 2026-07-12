@@ -506,3 +506,89 @@ pass that made the `app` host boot at all (see `nobilis-platform-back/docs/sourc
 | `provideHttpClient` and PrimeNG stay OUT of `projects/app/src/app/app.config.ts` | Only the rejected content-endpoint option would have needed them. Adding either now would be configuration for a capability the portal does not use. `admin`'s config carries both because its screens actually call the API and render PrimeNG widgets. |
 | Strings live in `landing/landing.strings.ts`, not inline in the template | Same i18n seam as every admin screen (`dashboard.strings.ts`, `settings.strings.ts`, …): user-visible text is isolated in one place so a future i18n mechanism has a single point to consume, even though this screen's content is a placeholder. |
 | The shell's `<h1>{{ title() }}</h1>` was removed from `app.html` (with the now-dead `title` signal and the spec case asserting it) | Angular CLI scaffolding, harmless while `routes` was empty. Once `''` renders `Landing` — which owns its own `<h1>` — the shell's heading would print a literal "app" above every screen and give each page two `<h1>`s. Verified in the browser via playwright: one `h1`, and `/no-such-page` redirects to `/` with zero console errors. |
+
+---
+
+## 2026-07-12 — M05 pass 2: `common/locale` — `localStorage`, not `sessionStorage`
+
+`LocaleStore` persists the active UI locale to `localStorage`, diverging from `AuthStore`'s
+`sessionStorage` choice (`auth-store.ts:24-26,47-54`).
+
+| Decision | Source / rationale |
+| --- | --- |
+| `localStorage`, not `sessionStorage`, for the locale preference | `AuthStore`'s `sessionStorage` choice was deliberately tab-scoped for a security-sensitive token (clears on tab close). A locale preference is not sensitive and a user expects it to persist across tabs and browser restarts, not reset per tab — the opposite of the auth token's threat model, so the pattern does not transfer. |
+
+---
+
+## 2026-07-12 — M05 pass 3: `@angular/localize` runtime init — build-order + assets-path decisions
+
+Wiring `initI18n()` (registers locale data, loads the `$localize` overlay dictionary) into both
+`admin` and `app` bootstraps surfaced two decisions worth recording before pass 4 marks strings.
+
+| Decision | Source / rationale |
+| --- | --- |
+| `initI18n()` lives once in `common` (`projects/common/src/lib/locale/i18n-init.ts`), NOT duplicated per app — but `common` resolves via the `common` path alias to `dist/common` (`tsconfig.json`), not library source | Consuming projects only ever see the *built* library output. Any edit to `initI18n()` (or anything else in `common`) requires `ng build common` before `ng build admin`/`ng build app`/`ng serve` picks it up — stale `dist/common` silently serves the old behavior with no compile error. This is a standing trap for every future `common` change, not just this pass. |
+| Locale dictionaries (`ru.json`/`ro.json`) live per-app under each project's `public/i18n/` (Angular 22's `public/` asset convention, not the legacy `assets/` folder), duplicated rather than served from one shared location | `angular.json` wires `public/` independently per build target with no shared-assets pipeline already in place; building one for two small JSON files ahead of actual need is the same speculative-infrastructure trap called out in the M03 pass-2 log above. Revisit only if dictionary content grows enough that duplication starts causing real drift. |
+
+---
+
+## 2026-07-12 — M05 pass 4 (final): `$localize` string marking — extract-i18n bridge + TS-side-only marking
+
+Closes milestone 05. Marked all ~182 user-visible strings across the 9 `*.strings.ts` files with
+`` $localize`:@@PascalCaseId:...` `` and wired `ng extract-i18n` for both apps.
+
+| Decision | Source / rationale |
+| --- | --- |
+| `extract-i18n --format=json` output is used ONLY as the master EN id list, never written to `public/i18n/*.json` as-is | The `json` format's actual on-disk shape, confirmed from the installed `@angular/localize` package (`simple_json_translation_parser.d.ts`), is `{ locale, translations: {id: msg} }` — one wrapper level, not flat. The runtime loader (`i18n-init.ts:33`) calls `loadTranslations(await response.json())` on the raw body with no unwrap, so the served overlay files are hand-authored in the bare flat shape directly; the wrapped extract output lives under each project's `src/locale/` (gitignored, not under `public/`) purely as a build artifact to read `.translations` keys from. (The initial stub shape shipped here — `{id: ""}` for every id — was wrong; corrected the same day, see the pass-4 follow-up entry below.) |
+| Master extraction format = `json`, not XLIFF, despite XLIFF carrying source-location metadata | `ru`/`ro` are empty stubs this milestone with no live translator process — XLIFF's per-string source-file/line comments are weight with no consumer yet (extract-don't-predict, same reasoning as BL-001). Revisit only once a real translation handoff workflow exists. |
+| Marking is entirely TS-side (`$localize` tagged template literals inside `.strings.ts`), not the template `i18n="@@Id"` attribute | Recon (pass-4 recon) found the ~182-string surface is consumed via property binding (`{{ strings.title }}`, `[label]="strings.submit"`), not literal template text nodes — `login.html:2,5,15,30,35` confirms the pattern repo-wide. The template-attribute extraction path has near-zero surface here; documented so a future contributor doesn't go hunting for `i18n=` attributes that were never going to exist. |
+| Same-text-same-meaning strings share one `$localize` id across files (e.g. `@@Save`, `@@Cancel`, `@@Status`, `@@BackToDashboard`) rather than a fresh id per screen | Flat, no-feature-prefix namespace (locked decision) makes this the natural dedup point; `ng extract-i18n` also *requires* it — it errors on the same id with different source text, so consistent reuse of common UI words was verified duplicate-id-safe by the extract run itself (179 raw uses → 106 unique admin ids, 0 conflicts). |
+| Vitest overlay-integrity spec (`i18n-overlay.spec.ts` per app) reads `public/i18n/ru.json`/`ro.json` via `node:fs`, requiring a new `@types/node` devDependency + `"node"` added to each app's `tsconfig.spec.json` `types` | JSON `import` would hit the spec `tsconfig`'s `rootDir: "./src"` boundary (the overlay files live under `public/`, outside `src/`) and require `resolveJsonModule` plumbing; `fs.readFileSync` with a relative path sidesteps the rootDir constraint entirely since it's a runtime string, not a compiled import — the only actual gap was type declarations for `node:fs`/`node:path`, fixed by installing `@types/node`. |
+
+---
+
+## 2026-07-12 — M05 pass 4 follow-up: `{id: ""}` stubs blanked the UI — absent key, not empty value, is the EN-fallback path
+
+Live check (Deg) showed switching to RO/RU blanked every label instead of falling back to English.
+`loadTranslations` (`@angular/localize` `localize.mjs`, `loadTranslations()`) only writes
+`$localize.TRANSLATIONS[key]` for keys **present** in the loaded object — it never special-cases an
+empty string. So a present key mapped to `""` overrides the English source with nothing, while an
+**absent** key is what leaves the `$localize` source untouched. The pass-4 stubs mapped every
+extracted id to `""`, which is the wrong one of those two states. Fixed: all four overlay files now
+carry 1–2 SEEDED real values only (`AdminDashboardTitle` for admin, `NobilisPlatformTitle` for app),
+omitting every other id — proving both "apply" (the seeded string visibly changes) and "fallback"
+(everything else stays English) in one screen. Recorded because "present-but-empty ≠ absent" is a
+generic i18n-loader gotcha likely to bite again if the overlays are ever machine-generated.
+
+---
+
+## 2026-07-12 — M05 pass 4 follow-up #2: overlay-integrity spec read via JSON import, not `node:fs`
+
+Deg's independent run showed `i18n-overlay.spec.ts` registering **0 tests and FAIL** in both apps,
+contradicting the prior "all green" report. In this checkout, `ng test admin`/`ng test app` (default
+`@angular/build:unit-test` config, no `browsers` set) ran the spec fine and it passed — the installed
+builder schema (`node_modules/@angular/build/src/builders/unit-test/schema.json`, `browsers` option
+description) confirms tests default to **Node.js + jsdom**, not a real browser, so `node:fs` isn't
+externalized here and the discrepancy could not be reproduced locally. Flagging that mismatch rather
+than silently trusting either side — but the requested fix (drop `node:fs`/`node:path`, import the
+overlay JSON directly: `import ru from '../public/i18n/ru.json'`) is strictly more portable regardless
+of which environment is right, so it was applied. It worked with no `resolveJsonModule` tsconfig
+change needed (Vite's native JSON-module handling). Removed the now-unnecessary `@types/node`
+devDependency and the `"node"` entry in both apps' `tsconfig.spec.json` `types` (grep confirmed no
+other file uses `node:*` imports). General lesson kept regardless of the reproduction gap: a spec
+that reads the filesystem in a Vitest project can silently register **zero tests** instead of failing
+loudly if its runtime environment can't resolve the module — prefer a module import over `node:fs`
+for fixture data whenever the bundler supports it.
+
+---
+
+## 2026-07-12 — harness: CC report contract tightened (no unverified green claims)
+
+Directly caused by the pass-4-follow-up-#2 incident above (CC's report claimed "all green" while
+`i18n-overlay.spec.ts` had silently registered 0 tests). The commit-gate paragraph + DoD line in
+both `CLAUDE.md` (duplicated, not pointer-shared — confirmed byte-identical by diff after the
+edit) now require, for any check actually run, the exact command **+ its raw outcome line** (a
+real test-count line, not a summarized "all green"); a check not run is reported as not run,
+never asserted. Judgement/findings (what/why, surprises, unresolved GATE-0 discrepancies) are
+foregrounded as the report's actual value, not a proof block. Full rationale in the back canon
+`nobilis-platform-back/docs/sources-log.md` (same date, "harness — CC report contract tightened").

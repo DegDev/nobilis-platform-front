@@ -1,2 +1,8 @@
 <!-- Portal shell: routing only. Engine screens will be added on top as they are built. -->
+<!-- Proof-of-mechanism locale switcher; real placement belongs to a future portal shell/header. -->
+<nav>
+  <button type="button" [disabled]="locale() === 'en'" (click)="switchLocale('en')">EN</button>
+  <button type="button" [disabled]="locale() === 'ru'" (click)="switchLocale('ru')">RU</button>
+  <button type="button" [disabled]="locale() === 'ro'" (click)="switchLocale('ro')">RO</button>
+</nav>
 <router-outlet />

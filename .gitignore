@@ -11,6 +11,9 @@ yarn-error.log*
 /bazel-out/
 .angular/
 
+# --- i18n extract-i18n master artifact (build output, not the served overlay) ---
+projects/*/src/locale/
+
 # --- Testing / coverage ---
 /coverage/
 
