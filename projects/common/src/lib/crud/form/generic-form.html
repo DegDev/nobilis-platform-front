@@ -14,7 +14,13 @@
             <input [id]="field.key" type="checkbox" [formField]="booleanField(i)" />
           }
           @case ('number') {
-            <input [id]="field.key" pInputText type="number" [formField]="numberField(i)" />
+            <input
+              [id]="field.key"
+              pInputText
+              type="number"
+              step="any"
+              [formField]="numberField(i)"
+            />
           }
           @case ('textarea') {
             <textarea [id]="field.key" pTextarea [formField]="stringField(i)"></textarea>
