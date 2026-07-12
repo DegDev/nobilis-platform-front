@@ -506,3 +506,14 @@ pass that made the `app` host boot at all (see `nobilis-platform-back/docs/sourc
 | `provideHttpClient` and PrimeNG stay OUT of `projects/app/src/app/app.config.ts` | Only the rejected content-endpoint option would have needed them. Adding either now would be configuration for a capability the portal does not use. `admin`'s config carries both because its screens actually call the API and render PrimeNG widgets. |
 | Strings live in `landing/landing.strings.ts`, not inline in the template | Same i18n seam as every admin screen (`dashboard.strings.ts`, `settings.strings.ts`, …): user-visible text is isolated in one place so a future i18n mechanism has a single point to consume, even though this screen's content is a placeholder. |
 | The shell's `<h1>{{ title() }}</h1>` was removed from `app.html` (with the now-dead `title` signal and the spec case asserting it) | Angular CLI scaffolding, harmless while `routes` was empty. Once `''` renders `Landing` — which owns its own `<h1>` — the shell's heading would print a literal "app" above every screen and give each page two `<h1>`s. Verified in the browser via playwright: one `h1`, and `/no-such-page` redirects to `/` with zero console errors. |
+
+---
+
+## 2026-07-12 — M05 pass 2: `common/locale` — `localStorage`, not `sessionStorage`
+
+`LocaleStore` persists the active UI locale to `localStorage`, diverging from `AuthStore`'s
+`sessionStorage` choice (`auth-store.ts:24-26,47-54`).
+
+| Decision | Source / rationale |
+| --- | --- |
+| `localStorage`, not `sessionStorage`, for the locale preference | `AuthStore`'s `sessionStorage` choice was deliberately tab-scoped for a security-sensitive token (clears on tab close). A locale preference is not sensitive and a user expects it to persist across tabs and browser restarts, not reset per tab — the opposite of the auth token's threat model, so the pattern does not transfer. |
