@@ -1,0 +1,94 @@
+<main class="ai-llm">
+  <header class="ai-llm__header">
+    <a class="ai-llm__back" [routerLink]="['/dashboard']">{{ strings.back }}</a>
+    <h1>{{ strings.title }}</h1>
+  </header>
+
+  <div class="ai-llm__selectors">
+    <label for="ai-purpose">{{ strings.purposeLabel }}</label>
+    <select id="ai-purpose" [ngModel]="selectedPurpose()" (ngModelChange)="selectPurpose($event)">
+      @for (purpose of purposes(); track purpose) {
+        <option [value]="purpose">{{ purpose }}</option>
+      }
+    </select>
+
+    <label for="ai-provider">{{ strings.providerLabel }}</label>
+    <select
+      id="ai-provider"
+      [ngModel]="selectedProvider()"
+      (ngModelChange)="selectProvider($event)"
+    >
+      @for (provider of providers(); track provider.code) {
+        <option [value]="provider.code">{{ provider.label }}</option>
+      }
+    </select>
+  </div>
+
+  @if (readOnlyFields().length > 0) {
+    <section class="ai-llm__infra">
+      <h2>{{ strings.infraHeading }}</h2>
+      @for (field of readOnlyFields(); track field.fieldKey) {
+        <p>
+          <strong>{{ field.fieldKey }}</strong
+          >: {{ field.defaultValue }}
+        </p>
+      }
+    </section>
+  }
+
+  @if (secretDescriptors().length > 0) {
+    <section class="ai-llm__secrets">
+      @for (field of secretDescriptors(); track field.fieldKey) {
+        <label [for]="'ai-secret-' + field.fieldKey">
+          {{ field.fieldKey }}
+          @if (isSecretConfigured(field.fieldKey)) {
+            <p-tag severity="success" [value]="strings.secretConfigured" />
+          } @else {
+            <p-tag severity="secondary" [value]="strings.secretNotConfigured" />
+          }
+        </label>
+        <input
+          [id]="'ai-secret-' + field.fieldKey"
+          pInputText
+          type="password"
+          autocomplete="off"
+          [ngModel]="secretValue(field.fieldKey)"
+          (ngModelChange)="setSecretValue(field.fieldKey, $event)"
+        />
+      }
+    </section>
+  }
+
+  <nb-generic-form
+    [fields]="fields()"
+    [serverErrors]="serverErrors()"
+    [submitLabel]="strings.save"
+    [cancelLabel]="strings.cancel"
+    [pending]="pending()"
+    (save)="onSave($event)"
+    (cancelled)="selectProvider(selectedProvider())"
+  />
+
+  @if (formError(); as message) {
+    <p-message severity="error" variant="simple" size="small">{{ message }}</p-message>
+  }
+
+  <div class="ai-llm__health">
+    <p-button
+      [label]="strings.healthCheck"
+      severity="secondary"
+      [loading]="healthChecking()"
+      (onClick)="checkHealth()"
+    />
+    @if (healthResult(); as result) {
+      <p-tag
+        [severity]="result.ok ? 'success' : 'danger'"
+        [value]="
+          (result.ok ? strings.healthCheckOk : strings.healthCheckFailed) + ': ' + result.message
+        "
+      />
+    }
+  </div>
+
+  <p-toast />
+</main>

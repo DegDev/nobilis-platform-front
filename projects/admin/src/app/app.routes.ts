@@ -42,6 +42,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./notifications/notifications-page').then((m) => m.NotificationsPage),
   },
+  {
+    path: 'ai-llm',
+    canActivate: [authGuard],
+    loadComponent: () => import('./ai-llm/ai-llm-page').then((m) => m.AiLlmPage),
+  },
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'dashboard' },
 ];
