@@ -3,7 +3,7 @@
  * rationale as the admin screens' strings files).
  */
 export const LANDING_STRINGS = {
-  title: 'Nobilis platform',
-  tagline: 'A universal open-source web engine.',
-  placeholderNotice: 'This landing page is a placeholder. Real content arrives with the CMS.',
+  title: $localize`:@@NobilisPlatformTitle:Nobilis platform`,
+  tagline: $localize`:@@NobilisPlatformTagline:A universal open-source web engine.`,
+  placeholderNotice: $localize`:@@LandingPlaceholderNotice:This landing page is a placeholder. Real content arrives with the CMS.`,
 } as const;

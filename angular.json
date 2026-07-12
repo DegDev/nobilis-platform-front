@@ -115,6 +115,15 @@
             "lintFilePatterns": ["projects/admin/**/*.ts", "projects/admin/**/*.html"],
             "eslintConfig": "projects/admin/eslint.config.js"
           }
+        },
+        "extract-i18n": {
+          "builder": "@angular/build:extract-i18n",
+          "options": {
+            "buildTarget": "admin:build",
+            "format": "json",
+            "outputPath": "projects/admin/src/locale",
+            "outFile": "messages.json"
+          }
         }
       }
     },
@@ -192,6 +201,15 @@
           "options": {
             "lintFilePatterns": ["projects/app/**/*.ts", "projects/app/**/*.html"],
             "eslintConfig": "projects/app/eslint.config.js"
+          }
+        },
+        "extract-i18n": {
+          "builder": "@angular/build:extract-i18n",
+          "options": {
+            "buildTarget": "app:build",
+            "format": "json",
+            "outputPath": "projects/app/src/locale",
+            "outFile": "messages.json"
           }
         }
       }

@@ -4,12 +4,12 @@
  * text and gives that later pass a single seam to localise.
  */
 export const LOGIN_STRINGS = {
-  title: 'Admin sign in',
-  email: 'Email',
-  password: 'Password',
-  submit: 'Sign in',
-  emailRequired: 'Email is required',
-  emailInvalid: 'Enter a valid email address',
-  passwordRequired: 'Password is required',
-  failed: 'Invalid email or password',
+  title: $localize`:@@AdminSignInTitle:Admin sign in`,
+  email: $localize`:@@Email:Email`,
+  password: $localize`:@@Password:Password`,
+  submit: $localize`:@@SignIn:Sign in`,
+  emailRequired: $localize`:@@EmailRequired:Email is required`,
+  emailInvalid: $localize`:@@EmailInvalid:Enter a valid email address`,
+  passwordRequired: $localize`:@@PasswordRequired:Password is required`,
+  failed: $localize`:@@LoginFailed:Invalid email or password`,
 } as const;
