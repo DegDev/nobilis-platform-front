@@ -63,7 +63,8 @@
                 "input": "projects/admin/public"
               }
             ],
-            "styles": ["node_modules/primeicons/primeicons.css", "projects/admin/src/styles.scss"]
+            "styles": ["node_modules/primeicons/primeicons.css", "projects/admin/src/styles.scss"],
+            "polyfills": ["@angular/localize/init"]
           },
           "configurations": {
             "production": {
@@ -140,7 +141,8 @@
                 "input": "projects/app/public"
               }
             ],
-            "styles": ["projects/app/src/styles.scss"]
+            "styles": ["projects/app/src/styles.scss"],
+            "polyfills": ["@angular/localize/init"]
           },
           "configurations": {
             "production": {

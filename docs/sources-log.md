@@ -517,3 +517,15 @@ pass that made the `app` host boot at all (see `nobilis-platform-back/docs/sourc
 | Decision | Source / rationale |
 | --- | --- |
 | `localStorage`, not `sessionStorage`, for the locale preference | `AuthStore`'s `sessionStorage` choice was deliberately tab-scoped for a security-sensitive token (clears on tab close). A locale preference is not sensitive and a user expects it to persist across tabs and browser restarts, not reset per tab — the opposite of the auth token's threat model, so the pattern does not transfer. |
+
+---
+
+## 2026-07-12 — M05 pass 3: `@angular/localize` runtime init — build-order + assets-path decisions
+
+Wiring `initI18n()` (registers locale data, loads the `$localize` overlay dictionary) into both
+`admin` and `app` bootstraps surfaced two decisions worth recording before pass 4 marks strings.
+
+| Decision | Source / rationale |
+| --- | --- |
+| `initI18n()` lives once in `common` (`projects/common/src/lib/locale/i18n-init.ts`), NOT duplicated per app — but `common` resolves via the `common` path alias to `dist/common` (`tsconfig.json`), not library source | Consuming projects only ever see the *built* library output. Any edit to `initI18n()` (or anything else in `common`) requires `ng build common` before `ng build admin`/`ng build app`/`ng serve` picks it up — stale `dist/common` silently serves the old behavior with no compile error. This is a standing trap for every future `common` change, not just this pass. |
+| Locale dictionaries (`ru.json`/`ro.json`) live per-app under each project's `public/i18n/` (Angular 22's `public/` asset convention, not the legacy `assets/` folder), duplicated rather than served from one shared location | `angular.json` wires `public/` independently per build target with no shared-assets pipeline already in place; building one for two small JSON files ahead of actual need is the same speculative-infrastructure trap called out in the M03 pass-2 log above. Revisit only if dictionary content grows enough that duplication starts causing real drift. |

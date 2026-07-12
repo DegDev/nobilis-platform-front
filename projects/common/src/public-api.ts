@@ -28,3 +28,4 @@ export * from './lib/crud/dialog/crud-dialog';
 export * from './lib/locale/locale';
 export * from './lib/locale/locale-store';
 export * from './lib/locale/locale-interceptor';
+export * from './lib/locale/i18n-init';
