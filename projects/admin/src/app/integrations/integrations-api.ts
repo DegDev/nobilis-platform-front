@@ -5,13 +5,13 @@ import { Observable } from 'rxjs';
 import { INTEGRATION_KEY_PREFIX, IntegrationSetting } from './integration';
 
 /**
- * Talks to the existing admin settings REST API (`/admin/api/settings`), the same endpoint the
+ * Talks to the existing admin settings REST API (`/api/admin/settings`), the same endpoint the
  * settings screen uses — the Integrations screen adds no new backend surface (see the paired
  * backend plan), just a `keyPrefix` query param and reuse of the existing PUT-upsert write path.
  */
 @Injectable({ providedIn: 'root' })
 export class IntegrationsApi {
-  private static readonly BASE = '/admin/api/settings';
+  private static readonly BASE = '/api/admin/settings';
   // Providers are admin-curated and few; one generously-sized page avoids adding paging UI for this pass.
   private static readonly LIST_SIZE = 200;
 

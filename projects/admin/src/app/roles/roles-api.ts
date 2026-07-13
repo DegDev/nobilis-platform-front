@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import { RoleCreateRequest, RoleModel, RoleUpdateRequest } from './role';
 
 /**
- * Talks to the admin roles REST API (`/admin/api/roles`) — the second consumer of the common CRUD
+ * Talks to the admin roles REST API (`/api/admin/roles`) — the second consumer of the common CRUD
  * kit's HTTP contract after settings: `PagedModel` list responses and `PageableQuery` request
  * params. Errors surface as the common `ProblemDetailError` (the problem interceptor is registered
  * globally) and the Bearer token is attached by the admin `authInterceptor`. Rows are keyed by
@@ -14,7 +14,7 @@ import { RoleCreateRequest, RoleModel, RoleUpdateRequest } from './role';
  */
 @Injectable({ providedIn: 'root' })
 export class RolesApi {
-  private static readonly BASE = '/admin/api/roles';
+  private static readonly BASE = '/api/admin/roles';
 
   private readonly http = inject(HttpClient);
 
