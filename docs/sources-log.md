@@ -592,3 +592,32 @@ real test-count line, not a summarized "all green"); a check not run is reported
 never asserted. Judgement/findings (what/why, surprises, unresolved GATE-0 discrepancies) are
 foregrounded as the report's actual value, not a proof block. Full rationale in the back canon
 `nobilis-platform-back/docs/sources-log.md` (same date, "harness — CC report contract tightened").
+
+---
+
+## 2026-07-13 — M06 slice 5: AI/LLM admin form renders entirely from the backend descriptor
+
+The `ai-llm` screen (`projects/admin/src/app/ai-llm/`) is the first consumer of the shared
+`GenericForm`/`FormFieldState` kit (`crud/form/`, built in an earlier CRUD milestone) OUTSIDE a
+`DynamicDialog` — it's embedded directly in a standalone page, proving the primitive isn't
+dialog-coupled. Editable INFRA/OPERATIONAL fields map to `FormFieldState[]` at runtime from
+`GET /admin/api/ai/descriptor` (`toFormField` in `ai-llm-page.ts`); labels are the raw `fieldKey`
+(no per-field label dictionary) so a brand-new catalog field appears with zero frontend change —
+that's the mechanism's whole point, and hardcoding labels would silently defeat it. Read-only
+`editable=false` fields (e.g. `base-url`) and `SECRET`-category fields are deliberately rendered
+OUTSIDE `GenericForm` (plain text / a bespoke password input showing only `secretsSet`), mirroring
+the Settings/Integrations screens' write-only-secret convention — `GenericForm`'s Signal-Forms tree
+only ever holds INFRA/OPERATIONAL non-secret values.
+
+Tried and reverted: adding optional `min`/`max` to `FormFieldState` + `[attr.min]`/`[attr.max]` on
+the generated `<input>` for native browser bounds. Angular's Signal Forms `[formField]` directive
+rejects any `[attr.*]` binding on its host element at compile time (`NG8022`) — it owns the
+element's bound attributes so its schema-driven validators stay authoritative. Reverted rather than
+plumbing `min`/`max` into the Signal Forms schema (bigger, riskier change than this slice's scope);
+the backend already validates and rejects out-of-bounds values (`error.ai-provider-field-out-of-bounds`),
+surfaced client-side via the same top-level `formError` fallback the role/settings dialogs already
+use for `fieldErrors`-less problems.
+
+Screen is deliberately SPARTAN (plain PrimeNG defaults, native `<select>`) per the milestone's
+explicit instruction — a dedicated admin design-system milestone follows 06 and will redress every
+screen at once; polishing this one now would be redone work.

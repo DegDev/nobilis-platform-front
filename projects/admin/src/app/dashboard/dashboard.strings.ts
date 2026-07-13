@@ -11,5 +11,6 @@ export const DASHBOARD_STRINGS = {
   contentBlocks: $localize`:@@ContentBlocks:Content blocks`,
   integrations: $localize`:@@Integrations:Integrations`,
   notifications: $localize`:@@Notifications:Notifications`,
+  aiLlm: $localize`:@@AiLlmTitle:AI / LLM`,
   logout: $localize`:@@SignOut:Sign out`,
 } as const;
