@@ -16,6 +16,24 @@ export function decodeJwtSubject(token: string): string | null {
   }
 }
 
+/**
+ * Decodes the `exp` claim (seconds since epoch) from a JWT for DISPLAY/SCHEDULING ONLY — same
+ * no-verification caveat as {@link decodeJwtSubject}. Used to decide whether a token is close enough
+ * to expiry to silently re-mint before attaching it to a request.
+ */
+export function decodeJwtExp(token: string): number | null {
+  const segments = token.split('.');
+  if (segments.length !== 3) {
+    return null;
+  }
+  try {
+    const claims = JSON.parse(base64UrlDecode(segments[1])) as { exp?: unknown };
+    return typeof claims.exp === 'number' ? claims.exp : null;
+  } catch {
+    return null;
+  }
+}
+
 function base64UrlDecode(value: string): string {
   const base64 = value.replace(/-/g, '+').replace(/_/g, '/');
   const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
