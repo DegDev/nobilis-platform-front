@@ -11,13 +11,13 @@ import {
 } from './content-block';
 
 /**
- * Talks to the admin content-blocks REST API (`/admin/api/content-blocks`) — the same thin
+ * Talks to the admin content-blocks REST API (`/api/admin/content-blocks`) — the same thin
  * `HttpClient` wrapper shape as `SettingsApi`: `PagedModel` list responses, `PageableQuery` request
  * params, errors surfaced as the common `ProblemDetailError` via the global problem interceptor.
  */
 @Injectable({ providedIn: 'root' })
 export class ContentBlocksApi {
-  private static readonly BASE = '/admin/api/content-blocks';
+  private static readonly BASE = '/api/admin/content-blocks';
 
   private readonly http = inject(HttpClient);
 

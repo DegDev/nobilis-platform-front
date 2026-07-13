@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import { Setting, SettingCreateRequest, SettingUpdateRequest } from './setting';
 
 /**
- * Talks to the admin settings REST API (`/admin/api/settings`) — the first consumer of the common
+ * Talks to the admin settings REST API (`/api/admin/settings`) — the first consumer of the common
  * CRUD kit's HTTP contract: `PagedModel` list responses and `PageableQuery` request params. Errors
  * surface as the common `ProblemDetailError` (the problem interceptor is registered globally) and
  * the Bearer token is attached by the admin `authInterceptor`; this stays a thin, stateless
@@ -13,7 +13,7 @@ import { Setting, SettingCreateRequest, SettingUpdateRequest } from './setting';
  */
 @Injectable({ providedIn: 'root' })
 export class SettingsApi {
-  private static readonly BASE = '/admin/api/settings';
+  private static readonly BASE = '/api/admin/settings';
 
   private readonly http = inject(HttpClient);
 

@@ -5,7 +5,7 @@ import { Observable, map } from 'rxjs';
 import { AccountModel, AccountUpdateRequest, RoleRef } from './account';
 
 /**
- * Talks to the admin accounts REST API (`/admin/api/accounts`) — the third consumer of the common
+ * Talks to the admin accounts REST API (`/api/admin/accounts`) — the third consumer of the common
  * CRUD kit's HTTP contract, after settings and roles. Same contract: `PagedModel` list responses,
  * `PageableQuery` params, `ProblemDetailError` (global interceptor) and the Bearer token attached by
  * the admin `authInterceptor`. Rows are keyed by numeric `id`. There is no create or delete call —
@@ -15,8 +15,8 @@ import { AccountModel, AccountUpdateRequest, RoleRef } from './account';
  */
 @Injectable({ providedIn: 'root' })
 export class AccountsApi {
-  private static readonly BASE = '/admin/api/accounts';
-  private static readonly ROLES = '/admin/api/roles';
+  private static readonly BASE = '/api/admin/accounts';
+  private static readonly ROLES = '/api/admin/roles';
 
   private readonly http = inject(HttpClient);
 

@@ -21,7 +21,7 @@ export const appConfig: ApplicationConfig = {
     // registerLocaleData for en/ru/ro already ran in initI18n() before bootstrap; LOCALE_ID here
     // drives DatePipe/CurrencyPipe/ICU to match the active UI locale.
     { provide: LOCALE_ID, useFactory: () => inject(LocaleStore).locale() },
-    // authInterceptor stamps the Bearer token on /admin/api calls; problemDetailInterceptor turns
+    // authInterceptor stamps the Bearer token on /api/admin calls; problemDetailInterceptor turns
     // RFC 9457 error bodies into a typed ProblemDetailError the settings form reads field errors from;
     // localeInterceptor stamps the active UI locale as ?locale= on every request.
     provideHttpClient(

@@ -10,13 +10,13 @@ import {
 } from './ai-profile.model';
 
 /**
- * Talks to the AI-profile admin REST API (`/admin/api/ai`). Errors surface as the common
+ * Talks to the AI-profile admin REST API (`/api/admin/ai`). Errors surface as the common
  * `ProblemDetailError` (the problem interceptor is registered globally) and the Bearer token is
  * attached by the admin `authInterceptor`; this stays a thin, stateless HttpClient wrapper.
  */
 @Injectable({ providedIn: 'root' })
 export class AiProfileApi {
-  private static readonly BASE = '/admin/api/ai';
+  private static readonly BASE = '/api/admin/ai';
 
   private readonly http = inject(HttpClient);
 

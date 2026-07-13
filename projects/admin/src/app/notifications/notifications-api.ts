@@ -15,13 +15,13 @@ import {
 
 /**
  * Talks to the admin notifications REST API — thin `HttpClient` wrapper, same shape as
- * `ContentBlocksApi`. Types under `/admin/api/notification-types`, templates under
- * `/admin/api/notification-templates`.
+ * `ContentBlocksApi`. Types under `/api/admin/notification-types`, templates under
+ * `/api/admin/notification-templates`.
  */
 @Injectable({ providedIn: 'root' })
 export class NotificationsApi {
-  private static readonly TYPES = '/admin/api/notification-types';
-  private static readonly TEMPLATES = '/admin/api/notification-templates';
+  private static readonly TYPES = '/api/admin/notification-types';
+  private static readonly TEMPLATES = '/api/admin/notification-templates';
 
   private readonly http = inject(HttpClient);
 
