@@ -820,3 +820,60 @@ watching. An already-running `ng serve admin` process did not pick up a mid-sess
 rebuild (`dist/common` sits outside the dev server's watched source tree) until the dev server itself
 was restarted; a plain browser reload was not enough. Worth knowing for any future slice that edits
 `common` while `admin`/`app` are already serving.
+
+---
+
+## 2026-07-18 — harness: CI↔local-verify parity fix (front)
+
+Follow-up to a same-session recon that audited local `scripts/verify.sh` (canon: back repo,
+`nobilis-platform-back/scripts/verify.sh`) against `.github/workflows/ci.yml`, prompted by the
+`fix-shell-menuitem-lint` incident (local green, CI red on lint). The recon found the lint gap was
+already closed but surfaced three larger, still-open gaps: tests never ran in CI at all; local
+verify built with `--configuration=development` while CI's `npm run build` defaults to
+`production` (already proven able to flip a verdict — the admin bundle-budget incident, 2026-07-13
+entry above); and formatting was CI-only. Operator ratified the fix set; this entry records the
+decisions taken, not a new investigation.
+
+- **CI gains a `Test (admin, app, common)` step** (`ci.yml`) running a new `npm run test:ci`
+  script (`package.json`) — `ng test <project> --no-watch` for all three, chained. `ng test` with
+  no project argument has no default (`angular.json` sets no `defaultProject` across this
+  multi-project workspace), so this mirrors the exact three invocations `verify.sh` already ran
+  locally rather than inventing a new test shape. → Angular CLI multi-project workspace docs.
+- **Local verify switches from `--configuration=development` to `--configuration=production`**
+  (`verify.sh`, front branch) — matches CI's `npm run build`, which has no `--configuration` flag
+  and therefore resolves each project's `defaultConfiguration: "production"` (`angular.json`).
+  Explicit `production` was chosen over omitting the flag (which would work identically today)
+  because it self-documents intent even if a project's `defaultConfiguration` is ever changed —
+  local verify is now pinned to "whatever CI actually builds", not "whatever the default happens
+  to resolve to". This is the fix for the largest gap the recon found: budgets/AOT strictness that
+  only fire under production were previously invisible to a local, pre-push run.
+- **`node_modules/.bin/prettier --check .` appended to local verify** (`verify.sh`, front branch),
+  after the lint/test chain, mirroring CI's `format:check` step in the same relative order
+  (build → lint → test → format:check on both sides now).
+- **Lockfile freshness: content-hash marker written by a new `postinstall` script, warn-only.**
+  A new `postinstall` (`package.json`) runs `cksum package-lock.json >
+  node_modules/.verify-lockfile-marker` on every `npm ci`/`npm install`; `verify.sh` compares the
+  live lockfile's current `cksum` against that marker and, on mismatch, prints a loud stderr
+  warning (visible immediately, not buried in the redirected build log) rather than failing. Two
+  cheaper mechanisms were tried first and rejected on evidence, not guesswork: (1) hashing
+  `package-lock.json` directly against npm's own `node_modules/.package-lock.json` snapshot —
+  rejected because that file is npm's *pruned* copy (platform-optional deps, e.g. other-OS/arch
+  `rollup`/`msgpackr` natives, are dropped from it), so it never byte-matches the root lockfile
+  even right after a clean install (measured: 734 vs. 618 `packages` entries on this box); (2) an
+  mtime comparison of the same two files — rejected because `git checkout` was observed rewriting
+  `package-lock.json`'s mtime to checkout-time even when its *content* was byte-identical across
+  the two branches (verified via `git diff`), which would false-warn on every branch switch. A
+  dedicated content-hash marker, updated only by an actual install, isn't perturbed by either
+  failure mode. Forcing `npm ci` on every local verify was rejected per the operator's explicit
+  call (too slow for the fast-iteration path this script serves).
+- **`.nvmrc` is now an exact Node-version requirement, not a floor.** `find_node()` previously
+  accepted any installed Node `>=` the pinned version (`version_ge`, now removed); CI's
+  `actions/setup-node` with `node-version-file: .nvmrc` resolves the *exact* pinned version, so a
+  local Node newer than `.nvmrc` could previously pass local verify while exercising a runtime CI
+  never runs. `find_node()` now requires `node -v` to equal `.nvmrc` exactly (via nvm's versioned
+  install path, then a `PATH` node checked for exact equality); no match → verify skips the front
+  check with a message, same "never false-green on a version gate" behavior as before, just at the
+  correct (exact) tolerance.
+
+Paired back-repo entry (JDK/locale/gitleaks-trigger parity): same date, back canon
+`nobilis-platform-back/docs/sources-log.md`, "harness: CI↔local-verify parity fix (back)".

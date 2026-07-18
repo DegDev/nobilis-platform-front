@@ -11,8 +11,10 @@
     "test": "ng test",
     "e2e": "playwright test",
     "lint": "ng lint",
+    "test:ci": "ng test admin --no-watch && ng test app --no-watch && ng test common --no-watch",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "postinstall": "cksum package-lock.json > node_modules/.verify-lockfile-marker"
   },
   "private": true,
   "packageManager": "npm@11.16.0",
