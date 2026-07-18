@@ -1,24 +1,26 @@
-import { Component, inject } from '@angular/core';
+import { Component, ElementRef, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Locale } from '../locale/locale';
 import { LocaleStore } from '../locale/locale-store';
 import { LayoutService } from './layout-service';
+import { ShellConfigurator } from './shell-configurator';
 
 /**
- * Ported from primefaces/sakai-ng@21.0.0 src/app/layout/component/app.topbar.ts (MIT), with two
+ * Ported from primefaces/sakai-ng@21.0.0 src/app/layout/component/app.topbar.ts (MIT), with
  * deliberate deviations from upstream (see docs/sources-log.md for the full recon note):
- *  - the palette/configurator button + `<app-configurator>` embed is dropped — the configurator
- *    is slice 2 scope, excluded here.
- *  - the mobile "..." overlay menu (a `pStyleClass` show/hide driven by Tailwind's `hidden`/
- *    `animate-scalein`/`animate-fadeout` utility classes, which this project does not use) and the
- *    Calendar/Messages/Profile placeholder buttons it revealed are dropped rather than re-styled —
- *    they were inert demo chrome with no behavior in this admin. The one real action that lived in
- *    that space, sign-out, is supplied by the consumer via content projection instead.
+ *  - the palette/configurator button + `<app-configurator>` embed uses `@if` + native
+ *    `animate.enter`/`animate.leave` and a manual outside-click listener (mirroring
+ *    `ShellSidebar`'s own pattern) instead of upstream's `pStyleClass` + Tailwind
+ *    `hidden`/`animate-scalein`/`animate-fadeout` classes, which this project does not use.
+ *  - the mobile "..." overlay menu (the same `pStyleClass` mechanism) and the Calendar/Messages/
+ *    Profile placeholder buttons it revealed are dropped rather than re-styled — they were inert
+ *    demo chrome with no behavior in this admin. The one real action that lived in that space,
+ *    sign-out, is supplied by the consumer via content projection instead.
  */
 @Component({
   selector: 'nb-shell-topbar',
-  imports: [RouterModule, CommonModule],
+  imports: [RouterModule, CommonModule, ShellConfigurator],
   template: `<div class="layout-topbar">
     <div class="layout-topbar-logo-container">
       <button
@@ -98,6 +100,21 @@ import { LayoutService } from './layout-service';
             }"
           ></i>
         </button>
+        <div class="layout-config-panel-anchor">
+          <button
+            type="button"
+            class="layout-topbar-action layout-topbar-action-highlight"
+            (click)="layoutService.toggleConfigSidebar()"
+          >
+            <i class="pi pi-palette"></i>
+          </button>
+          @if (layoutService.layoutState().configSidebarVisible) {
+            <nb-shell-configurator
+              animate.enter="p-configurator-enter"
+              animate.leave="p-configurator-leave"
+            ></nb-shell-configurator>
+          }
+        </div>
       </div>
       <ng-content></ng-content>
     </div>
@@ -106,9 +123,22 @@ import { LayoutService } from './layout-service';
 export class ShellTopbar {
   readonly layoutService = inject(LayoutService);
   private readonly localeStore = inject(LocaleStore);
+  private readonly el = inject(ElementRef);
 
   protected readonly appName = $localize`:@@ShellAppName:Admin`;
   protected readonly locale = this.localeStore.locale;
+
+  private outsideClickListener: ((event: MouseEvent) => void) | null = null;
+
+  constructor() {
+    effect(() => {
+      if (this.layoutService.layoutState().configSidebarVisible) {
+        this.bindOutsideClickListener();
+      } else {
+        this.unbindOutsideClickListener();
+      }
+    });
+  }
 
   // loadTranslations() doesn't retro-activate $localize strings already evaluated in the running
   // app, so a locale switch reloads the page rather than trying to be reactive (same approach as
@@ -116,5 +146,23 @@ export class ShellTopbar {
   protected switchLocale(locale: Locale): void {
     this.localeStore.setLocale(locale);
     location.reload();
+  }
+
+  private bindOutsideClickListener(): void {
+    if (this.outsideClickListener) return;
+
+    this.outsideClickListener = (event: MouseEvent) => {
+      const anchorEl = this.el.nativeElement.querySelector('.layout-config-panel-anchor');
+      if (anchorEl && !anchorEl.contains(event.target as Node)) {
+        this.layoutService.hideConfigSidebar();
+      }
+    };
+    document.addEventListener('click', this.outsideClickListener);
+  }
+
+  private unbindOutsideClickListener(): void {
+    if (!this.outsideClickListener) return;
+    document.removeEventListener('click', this.outsideClickListener);
+    this.outsideClickListener = null;
   }
 }

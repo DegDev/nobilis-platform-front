@@ -106,12 +106,50 @@ Projects: `common` (library), `admin`, `app`.
   `$localize`-wrapped now (no hardcoded source strings) but have no RU/RO `assets/i18n/*.json`
   overlay yet — falls back to EN under `ru`/`ro` until slice 5. Disclosed, not an oversight.
 
-**Slice 2 — configurator full port:**
-- `projects/common/src/lib/layout/configurator/` — full functional port of Sakai's configurator
-  (preset switcher, dark-mode toggle, surface/primary color pickers). Template re-styled from
-  Tailwind utility classes to SCSS against `@primeuix/themes` tokens; the one `*ngIf` holdout
-  migrated to `@if`.
-- Dark mode + preset switching wired into `LayoutService` from slice 1.
+**Slice 2 — configurator full port — DONE, 2026-07-18:**
+- GATE-0 outcome (full detail in `docs/sources-log.md`, "M07 slice 2" entry): re-confirmed the
+  pinned `21.0.0` commit (`96d71496d685b5c110efd2875abaa2bf89a56ad2`), `app.configurator.ts` is
+  exactly 446 lines, MIT-licensed directly in `sakai-ng`'s own tree (not the unlicensed
+  `sakai-assets` submodule), Tailwind-saturated with one `*ngIf`. GATE-0 passes.
+- **Premise correction, presented to and accepted by the operator:** upstream Sakai has no scale/
+  font-size control at any tag and persists nothing at all (zero `localStorage`/`sessionStorage`
+  usage repo-wide) — the brief's "scale control... persistence should match what Sakai does" was
+  checked against the actual source, not assumed; the scale control is a full own addition (not a
+  port), and "match Sakai" for persistence means adding none. Live-verified (operator-run): preset/
+  primary/scale all reset to shipped defaults on reload.
+- `projects/common/src/lib/layout/shell-configurator.ts` (new, `nb-shell-configurator`) — full
+  functional port of Primary/Surface/Presets/Menu Mode (preset-switching logic, `getPresetExt()`,
+  `$t()`/`updatePreset`/`updateSurfacePalette` wiring) plus a new Scale stepper (own addition,
+  `SHELL_SCALE_DEFAULT = 16`, range 12–20). The `*ngIf` holdout (`showMenuModeButton`, gated on a
+  router check for an 'auth' path that doesn't exist in this app's routing) is dropped rather than
+  migrated to `@if` — structurally always-true here since the shell only mounts authenticated
+  (slice 1) — consistent with slice 1's own precedent of dropping inert upstream chrome.
+- `projects/common/src/lib/layout/styles/_configurator.scss` (new, forwarded from `shell.scss`) —
+  own-authored SCSS against `@primeuix/themes` tokens (no MIT counterpart exists for this file in
+  any sakai-ng/sakai-assets tree); open/close via native `@if` + `animate.enter`/`animate.leave`
+  (mirrors `ShellMenuitem`'s existing precedent) instead of upstream's `pStyleClass` + Tailwind
+  classes.
+- `projects/common/src/lib/layout/layout-service.ts` — `LayoutConfig` gains `preset`/`primary`/
+  `surface`/`scale`; `LayoutState` gains `configSidebarVisible` (+ `toggleConfigSidebar()`/
+  `hideConfigSidebar()`); a new effect keeps `document.documentElement.style.fontSize` in sync with
+  `scale`. `_core.scss`'s static default bumped 14px → 16px to match (decision below).
+- `projects/common/src/lib/layout/shell-topbar.ts` — palette toggle button + `<nb-shell-
+  configurator>` panel restored (dropped in slice 1), outside-click-to-close mirrors
+  `ShellSidebar`'s existing pattern.
+- **NEW LOCKED DECISION (operator, this slice):** shipped default UI scale is 16px root font-size,
+  not Sakai's 14px — 4K reality. Exposed via the configurator's own Scale stepper.
+- Dark mode + preset switching wired into `LayoutService` from slice 1; live-verified (operator-run
+  Playwright) — dark mode, preset switching (Aura/Lara/Nora), and the scale stepper (16→18px, live
+  DOM + visual re-scale) all confirmed working in the running admin app.
+- Test-infra fix (unrelated to configurator logic, see sources-log): `common`'s
+  `tsconfig.spec.json` was missing `"@angular/localize"` in `types` (present in admin/app already);
+  added, plus `projects/common/src/test-setup.ts` wired via `angular.json`'s `setupFiles` for the
+  `$localize` runtime polyfill vitest needs.
+- New unit tests: `layout-service.spec.ts` (menu toggle in static/overlay/mobile, dark mode,
+  config-sidebar toggle, active path), `shell-configurator.spec.ts` (primary/surface swatch clicks,
+  scale clamp at 12/20, preset-switching logic).
+- i18n: new strings (`ShellConfigurator*`) `$localize`-wrapped, no RU/RO overlay yet — same
+  disclosed slice-5 gap as slice 1.
 
 **Slice 3 — nav-as-data (resolves `BL-004`):**
 - `projects/common/src/lib/layout/` — typed nav-model contract (e.g. `NavItem`/`NavSection`)

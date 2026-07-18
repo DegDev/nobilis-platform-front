@@ -1,7 +1,10 @@
 // Ported from primefaces/sakai-ng@20.0.0 (MIT) — see variables/_common.scss for the provenance note.
+// font-size deviates from upstream's 14px: 16px is this project's shipped default (4K reality, see
+// docs/sources-log.md "M07 slice 2"); LayoutService's scale effect keeps this in sync at runtime
+// once the configurator changes it, this is just the pre-hydration value.
 html {
   height: 100%;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 body {

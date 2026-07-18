@@ -731,3 +731,92 @@ removed as redundant now that the sidebar carries the same destinations; the das
 now just a greeting. Each other screen's own "Back to dashboard" link is left untouched — unlike the
 dashboard grid, it doesn't duplicate the sidebar, and touching seven files for it is out of this
 slice's scope.
+
+## 2026-07-18 — M07 slice 2: configurator full port — provenance, GATE-0, and a premise correction
+
+GATE-0 (before porting): re-cloned `primefaces/sakai-ng` at tag `21.0.0`, confirmed `HEAD` resolves to
+the same pinned commit slice 1 already cites for the components (`96d71496d685b5c110efd2875abaa2bf89a56ad2`)
+— no drift since slice 1. `src/app/layout/component/app.configurator.ts` is exactly 446 lines (matches
+the plan's estimate), tracked directly in `sakai-ng`'s own root MIT `LICENSE.md` (not the unlicensed
+`sakai-assets` submodule slice 1 had to route around — the configurator's TS was never in that
+submodule), and confirmed Tailwind-saturated (`flex`, `gap-*`, `rounded-full`, `hidden`, `outline`,
+arbitrary-value `shadow-[...]`) with exactly one `*ngIf` (`showMenuModeButton()`). GATE-0 passes as
+scoped; no LICENSE surface issue this time.
+
+**Premise correction — the brief's "scale control... 16 as the shipped default... persistence should
+match what Sakai does" assumed a feature that does not exist upstream.** Recon of the pinned
+`app.configurator.ts` found exactly four controls: Primary, Surface, Presets, Menu Mode — no scale/
+font-size control in any form, at this tag or any other reachable tag (checked `layout.service.ts`
+too: no `scale` field, upstream's 14px baseline is a static `html { font-size: 14px }` rule in
+`_core.scss`, sourced from tag `20.0.0` in slice 1, not a runtime-adjustable setting). A repo-wide
+grep of `sakai-ng`'s non-submodule tree for `localStorage`/`sessionStorage` also returned zero
+matches — upstream persists **nothing** (preset/primary/surface/dark-mode/menu-mode all reset on
+reload; `LayoutService`'s own `configSidebarVisible`/`showConfigSidebar()`/`hideConfigSidebar()` are
+themselves dead code upstream, never called by either `app.topbar.ts` or
+`app.floatingconfigurator.ts`, which each drive their own panel visibility through PrimeNG's
+`pStyleClass` directive instead). So: the scale control is entirely our own addition (not a port —
+there is nothing to port), and "match what Sakai does" for persistence means **add none** — confirmed
+by live Playwright verification (operator-run): reloading after changing preset/primary/scale reverts
+every field to the shipped defaults, matching upstream's own (lack of) behavior. Presented as a
+disclosed finding, not a silent substitution — the brief's phrasing anticipated this ("do not invent
+storage beyond what the source has").
+
+**Scale implementation.** `LayoutConfig.scale` (`layout-service.ts`) — default `SHELL_SCALE_DEFAULT =
+16` (px), range enforced in `ShellConfigurator` (`SCALE_MIN = 12`, `SCALE_MAX = 20`, a plain
+decrement/increment stepper styled like this repo's existing `.layout-topbar-action` icon buttons,
+not a new PrimeNG `InputNumber` dependency — simplicity-first, and the two other ported controls
+already establish `p-selectbutton` as the one PrimeNG form primitive this panel needs). A new
+`LayoutService` effect (`document.documentElement.style.fontSize = `${scale}px``) keeps the live DOM
+in sync whenever the signal changes; `_core.scss`'s static `html` rule is bumped from the ported
+14px to 16px too, so the pre-hydration paint already matches the shipped default instead of flashing
+14px then jumping.
+
+**Configurator SCSS has no MIT counterpart to port — authored by us against `@primeuix/themes`
+tokens** (extends the slice-1 GATE-0 ruling: `sakai-assets`, the only place Tailwind-based configurator
+styling could have shipped as plain CSS, has no LICENSE at all — out as a source for anything, not just
+this file). New partial `styles/_configurator.scss`, forwarded from `shell.scss`. Per-class mapping
+(Tailwind utility → own SCSS): `.flex.flex-col.gap-4` → `.layout-config-panel`/`.layout-config-panel-
+section` (flex containers with matching `gap`); `.text-sm.text-muted-color.font-semibold` →
+`.layout-config-panel-label`; the swatch buttons (`.w-5.h-5.rounded-full.outline.outline-primary`) →
+`.layout-config-panel-color`/`.layout-config-panel-color-selected` (a 2px `border-color: var(--primary-
+color)` instead of `outline`, consistent with how this file's borders are done elsewhere); the panel's
+Tailwind `dark:bg-surface-900` variant is dropped entirely rather than ported — PrimeNG's design-token
+CSS variables (`var(--surface-overlay)`) already resolve differently under `.app-dark` on their own, so
+there is no dark-specific rule to write (same simplification `.layout-topbar-menu` already relies on
+elsewhere in this SCSS tree). The open/close transition uses `@if` + native `animate.enter`/
+`animate.leave` (own keyframes, `p-configurator-enter`/`-leave`) instead of upstream's `pStyleClass` +
+Tailwind `animate-scalein`/`animate-fadeout`/`hidden` classes — mirrors `ShellMenuitem`'s existing
+submenu-animation precedent (the one native-animation example already in this codebase) rather than
+introducing `StyleClassModule`. Show/hide + outside-click-to-close is `LayoutState.configSidebarVisible`
+(revived from slice-1's dead-on-arrival port, now actually wired) plus a manual `document` click
+listener in `ShellTopbar` mirroring `ShellSidebar`'s existing outside-click pattern — chosen over
+PrimeNG's `StyleClassModule` `[hideOnOutsideClick]` specifically to avoid re-introducing Tailwind class
+names as the enter/leave vocabulary.
+
+**The `*ngIf` holdout (`showMenuModeButton`, gated on `router.url.includes('auth')`) is dropped, not
+migrated to `@if`.** In this app the shell only ever mounts inside the authenticated route subtree
+(slice 1's routing design: `/login` is a sibling route outside `<nb-shell>`), so the upstream condition
+— hide Menu Mode when the (also-upstream) floating configurator renders on a public/auth page — is
+structurally always-true here; there is no second mount context to gate against. Consistent with slice
+1's own precedent of dropping inert upstream chrome (the mobile "..." overlay, the Calendar/Messages/
+Profile buttons) rather than porting a dead condition for fidelity. Two further pieces of dead upstream
+code dropped for the same reason: the unused `config`/`primeng` (`PrimeNG`) injections in
+`app.configurator.ts` (declared, never read) and the `Router` dependency they existed for.
+
+**Test-infra gap found and fixed, unrelated to the configurator's own logic:**
+`projects/common/tsconfig.spec.json` was missing `"@angular/localize"` in its `types` array (present
+in `admin`'s and `app`'s tsconfig.spec.json already, absent only in `common`'s) — never triggered
+before because no `common` spec file had exercised a `$localize`-using source file (`shell-footer.ts`/
+`shell-topbar.ts` already used it since slice 1, just never imported by a spec). Fixed by adding the
+missing types entry, plus a new `projects/common/src/test-setup.ts` (`import '@angular/localize/init'`)
+wired via `setupFiles` in `angular.json`'s `common` test target — `@angular/localize/init` is a runtime
+polyfill, not just a type; the vitest unit-test builder for a library project has no `polyfills` option
+(that concept only exists on the application build targets), so `setupFiles` is the correct mechanism
+here, not a workaround.
+
+**Dev-server pitfall (operational, not a code note):** `admin` resolves `common` via the TS path
+mapping `"common": ["./dist/common"]` (`tsconfig.json`) — a prebuilt library output, not live source
+watching. An already-running `ng serve admin` process did not pick up a mid-session `ng build common`
+rebuild (`dist/common` sits outside the dev server's watched source tree) until the dev server itself
+was restarted; a plain browser reload was not enough. Worth knowing for any future slice that edits
+`common` while `admin`/`app` are already serving.

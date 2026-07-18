@@ -3,31 +3,45 @@ import { Injectable, computed, effect, signal } from '@angular/core';
 export interface LayoutConfig {
   darkTheme: boolean;
   menuMode: 'static' | 'overlay';
+  preset: string;
+  primary: string;
+  surface: string | null;
+  /** Root font-size in px. Own addition, not in upstream Sakai — see docs/sources-log.md. */
+  scale: number;
 }
 
 interface LayoutState {
   staticMenuDesktopInactive: boolean;
   overlayMenuActive: boolean;
   mobileMenuActive: boolean;
+  configSidebarVisible: boolean;
   activePath: string | null;
 }
 
+/** Shipped default root font-size (px) — 4K reality, overrides Sakai's 14px baseline. */
+export const SHELL_SCALE_DEFAULT = 16;
+
 /**
- * Ported from primefaces/sakai-ng@21.0.0 src/app/layout/service/layout.service.ts (MIT) —
- * trimmed to what the slice-1 structural shell uses (preset/primary/surface color state and the
- * config sidebar belong to the configurator, ported separately in slice 2).
+ * Ported from primefaces/sakai-ng@21.0.0 src/app/layout/service/layout.service.ts (MIT) — slice 1
+ * trimmed preset/primary/surface/config-sidebar state out ("belongs to the configurator"); slice 2
+ * adds it back, plus `scale` (own addition, see docs/sources-log.md).
  */
 @Injectable({ providedIn: 'root' })
 export class LayoutService {
   readonly layoutConfig = signal<LayoutConfig>({
     darkTheme: false,
     menuMode: 'static',
+    preset: 'Aura',
+    primary: 'emerald',
+    surface: null,
+    scale: SHELL_SCALE_DEFAULT,
   });
 
   readonly layoutState = signal<LayoutState>({
     staticMenuDesktopInactive: false,
     overlayMenuActive: false,
     mobileMenuActive: false,
+    configSidebarVisible: false,
     activePath: null,
   });
 
@@ -51,6 +65,10 @@ export class LayoutService {
       }
 
       this.handleDarkModeTransition(config.darkTheme);
+    });
+
+    effect(() => {
+      document.documentElement.style.fontSize = `${this.layoutConfig().scale}px`;
     });
   }
 
@@ -108,6 +126,17 @@ export class LayoutService {
       overlayMenuActive: false,
       mobileMenuActive: false,
     }));
+  }
+
+  toggleConfigSidebar(): void {
+    this.layoutState.update((state) => ({
+      ...state,
+      configSidebarVisible: !state.configSidebarVisible,
+    }));
+  }
+
+  hideConfigSidebar(): void {
+    this.layoutState.update((state) => ({ ...state, configSidebarVisible: false }));
   }
 
   isDesktop(): boolean {

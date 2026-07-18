@@ -30,9 +30,10 @@ export * from './lib/locale/locale-store';
 export * from './lib/locale/locale-interceptor';
 export * from './lib/locale/i18n-init';
 
-// layout — opt-in sakai-ng-derived admin/app shell (topbar/sidebar/menu/footer + LayoutService).
-// admin mounts this by default; app stays bare unless it imports it. SCSS lives alongside these
-// components at lib/layout/styles/shell.scss — a consumer @use's it from its global styles.scss.
+// layout — opt-in sakai-ng-derived admin/app shell (topbar/sidebar/menu/footer/configurator +
+// LayoutService). admin mounts this by default; app stays bare unless it imports it. SCSS lives
+// alongside these components at lib/layout/styles/shell.scss — a consumer @use's it from its
+// global styles.scss.
 export * from './lib/layout/layout-service';
 export * from './lib/layout/shell';
 export * from './lib/layout/shell-topbar';
@@ -40,3 +41,4 @@ export * from './lib/layout/shell-sidebar';
 export * from './lib/layout/shell-menu';
 export * from './lib/layout/shell-menuitem';
 export * from './lib/layout/shell-footer';
+export * from './lib/layout/shell-configurator';
