@@ -1,0 +1,16 @@
+// Ported from primefaces/sakai-ng@20.0.0 (MIT) — see variables/_common.scss for the provenance note.
+@mixin focused() {
+  outline-width: var(--focus-ring-width);
+  outline-style: var(--focus-ring-style);
+  outline-color: var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: var(--focus-ring-shadow);
+  transition:
+    box-shadow var(--transition-duration),
+    outline-color var(--transition-duration);
+}
+
+@mixin focused-inset() {
+  outline-offset: -1px;
+  box-shadow: inset var(--focus-ring-shadow);
+}

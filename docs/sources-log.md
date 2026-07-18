@@ -649,3 +649,174 @@ The re-mint HTTP call targets `/auth/admin/remint`, which does NOT start with `/
 deliberately invisible to `authInterceptor`'s own `/api/admin`-prefix gate — `AuthStore.remint()` sets
 the `Authorization` header itself from the token about to be replaced, rather than relying on the
 interceptor (which would only stamp it for admin-api paths and could recurse back into itself).
+
+## 2026-07-18 — M07 slice 1: sakai-ng layout shell fork — provenance and GATE-0 outcome
+
+`.agent/plans/07-admin-design.md` locked "fork-template import from `primefaces/sakai-ng@21.0.0` +
+its `sakai-assets` submodule (pinned commit), MIT" as decision 1, with an explicit GATE-0: verify
+the submodule's LICENSE, STOP if not MIT. It wasn't MIT — recon found no LICENSE file in
+`cetincakiroglu/sakai-assets` (the submodule's third-party owner, not PrimeTek) on any commit or
+branch, and GitHub's own license-detection API reports `"license": null`. Presented to the operator
+via AskUserQuestion; the chosen resolution below is operator-confirmed, not a unilateral call.
+
+**What's actually MIT vs. what isn't.** `primefaces/sakai-ng`'s own root `LICENSE.md` (MIT, PrimeTek,
+confirmed via the GitHub API — not a fork) covers everything tracked directly in that repo. The
+Angular components slice 1 needs (`app.layout.ts`, `app.topbar.ts`, `app.sidebar.ts`, `app.menu.ts`,
+`app.menuitem.ts`, `app.footer.ts`, `layout.service.ts`) live directly in that MIT tree at
+`src/app/layout/` — sourced from commit `96d71496d685b5c110efd2875abaa2bf89a56ad2` (tag `21.0.0`).
+Only the layout **SCSS** lives in the unlicensed submodule.
+
+**Resolution:** the same SCSS (`layout.scss`, `_topbar.scss`, `_menu.scss`, `_footer.scss`,
+`_core.scss`, `_main.scss`, `_mixins.scss`, `_responsive.scss`, `_utils.scss`, `_typography.scss`,
+`variables/*.scss`) was tracked as regular files directly in `primefaces/sakai-ng` itself — under
+that same root MIT `LICENSE.md` — up through tag `20.0.0`, before PrimeTek split it into the separate
+submodule repo. Diffed both: `layout.scss` is byte-identical between MIT tag `20.0.0` and the
+unlicensed submodule at `21.0.0`; `_topbar.scss` differs only by an added `.config-panel` block
+(configurator styling, slice 2 scope, not ported here). The SCSS is sourced from commit
+`63c55fa37037d2e8854a63408315b9ee493cb66c` (tag `20.0.0`) instead of the submodule — same MIT
+grant, earlier pin. `_preloading.scss` (a bootstrap loading-spinner, no markup for it in
+`index.html`) was not ported — out of the "structural shell" scope, not a licensing call.
+
+**A second recon-premise correction, found while reading the actual `.ts` files (not asked about
+separately — decisions 3 and 6, already locked, fully determine the fix).** The plan's decision 3
+states the structural shell is "already Tailwind-free (recon-confirmed)". True for the SCSS and for
+`app.sidebar.ts`/`app.menu.ts`/`app.menuitem.ts`/`layout.service.ts`, but **not** for
+`app.topbar.ts` (`hidden lg:block`, and `pStyleClass` show/hide driven by Tailwind's `animate-scalein`
+/`animate-fadeout`/`hidden` utility classes) or `app.footer.ts` (`text-primary font-bold
+hover:underline`) — confirmed by grepping the ported SCSS for those class names (none defined there)
+and finding `@tailwindcss/postcss` wired at the sakai-ng repo root. Fix, within the already-locked
+decisions: `ShellFooter` (`projects/common/src/lib/layout/shell-footer.ts`) uses a new
+`.layout-footer-link` SCSS class (plain CSS on PrimeUI tokens) instead of the Tailwind utilities.
+`ShellTopbar` (`shell-topbar.ts`) drops the mobile "…" overlay panel entirely rather than re-styling
+it — it only ever revealed inert demo chrome (Calendar/Messages/Profile buttons with no handlers in
+this admin); the one real action that lived there, sign-out, is supplied by `AdminShell` via content
+projection instead (`Shell`'s `<ng-content>` forwards into `ShellTopbar`'s). The palette/configurator
+button and `<app-configurator>` embed are dropped for the same reason decision 5 already gives —
+configurator is slice 2, excluded here.
+
+**Why `Shell` mounts via routing, not the root component template.** Upstream's own `app.routes.ts`
+nests `AppLayout` as a route-level wrapper (`{ path: '', component: AppLayout, children: [...] }`),
+not inside the root `AppComponent`'s template. Mirrored here for the same reason it exists upstream:
+the shell must wrap only the authenticated route subtree, not the (unauthenticated) `/login` screen.
+This has one consequence upstream doesn't have to deal with: a route-mounted component can't receive
+projected light-DOM content from a call site, so `AdminShell` (`projects/admin/src/app/shell/`) is a
+thin admin-owned wrapper that instantiates `<nb-shell>` directly in its own template — `common`'s
+`Shell`/`ShellTopbar` stay generic (no `AuthStore` dependency), `AdminShell` owns the concrete nav
+model and the sign-out action. The locale switcher, by contrast, is baked directly into `ShellTopbar`
+— `LocaleStore` is already `common` infrastructure, not admin-specific, so there is no reason to
+route it through projection. The one route outside the shell, `/login`, lost the root component's
+former locale switcher when `app.ts`/`app.html` were simplified to a bare `<router-outlet>` — it
+now carries a small switcher of its own (`login.ts`/`login.html`), same `LocaleStore` call, ~5 lines
+duplicated rather than a cross-cutting abstraction for two call sites (three-similar-lines-beats-a-
+premature-abstraction).
+
+**Admin menu labels reuse existing translated strings, not new ones.** `admin-menu.ts`
+(`projects/admin/src/app/shell/`) labels each sidebar entry with its target screen's own already-
+`$localize`'d `title` (`SETTINGS_STRINGS.title`, `ROLES_STRINGS.title`, etc.) instead of inventing
+parallel strings — these are the exact same `@@Settings`/`@@Roles`/etc. message IDs the screens
+already carry. `DASHBOARD_STRINGS` is trimmed to just `title`/`signedInAs`/`logout` (the nav-button
+labels it used to hold for the old dashboard button-grid moved to each screen's own strings file).
+The one genuinely new string is a single sidebar section header (`ADMIN_MENU_STRINGS.section`,
+`@@AdminMenuSectionLabel:Menu`) — nav-as-data (slice 3) may remove the need for it. Per the plan's
+explicit slice sequencing ("i18n for shell/configurator user-visible strings" is slice 5's job), new
+shell-only strings introduced this slice (`ShellAppName`, `ShellFooterBuiltWith`,
+`AdminMenuSectionLabel`) are `$localize`-wrapped (never hardcoded — satisfies this repo's default
+DoD for source code) but have no RU/RO overlay entries in `assets/i18n/*.json` yet; they render in
+English under `ru`/`ro` until slice 5 adds the overlay values, which is a disclosed, deliberate gap,
+not an oversight.
+
+**Also resolved (open question 2 from the plan):** the old `dashboard.html` button-grid (the only
+nav mechanism admin had before this slice — recon confirmed zero `MenuItem` usage anywhere) is
+removed as redundant now that the sidebar carries the same destinations; the dashboard screen is
+now just a greeting. Each other screen's own "Back to dashboard" link is left untouched — unlike the
+dashboard grid, it doesn't duplicate the sidebar, and touching seven files for it is out of this
+slice's scope.
+
+## 2026-07-18 — M07 slice 2: configurator full port — provenance, GATE-0, and a premise correction
+
+GATE-0 (before porting): re-cloned `primefaces/sakai-ng` at tag `21.0.0`, confirmed `HEAD` resolves to
+the same pinned commit slice 1 already cites for the components (`96d71496d685b5c110efd2875abaa2bf89a56ad2`)
+— no drift since slice 1. `src/app/layout/component/app.configurator.ts` is exactly 446 lines (matches
+the plan's estimate), tracked directly in `sakai-ng`'s own root MIT `LICENSE.md` (not the unlicensed
+`sakai-assets` submodule slice 1 had to route around — the configurator's TS was never in that
+submodule), and confirmed Tailwind-saturated (`flex`, `gap-*`, `rounded-full`, `hidden`, `outline`,
+arbitrary-value `shadow-[...]`) with exactly one `*ngIf` (`showMenuModeButton()`). GATE-0 passes as
+scoped; no LICENSE surface issue this time.
+
+**Premise correction — the brief's "scale control... 16 as the shipped default... persistence should
+match what Sakai does" assumed a feature that does not exist upstream.** Recon of the pinned
+`app.configurator.ts` found exactly four controls: Primary, Surface, Presets, Menu Mode — no scale/
+font-size control in any form, at this tag or any other reachable tag (checked `layout.service.ts`
+too: no `scale` field, upstream's 14px baseline is a static `html { font-size: 14px }` rule in
+`_core.scss`, sourced from tag `20.0.0` in slice 1, not a runtime-adjustable setting). A repo-wide
+grep of `sakai-ng`'s non-submodule tree for `localStorage`/`sessionStorage` also returned zero
+matches — upstream persists **nothing** (preset/primary/surface/dark-mode/menu-mode all reset on
+reload; `LayoutService`'s own `configSidebarVisible`/`showConfigSidebar()`/`hideConfigSidebar()` are
+themselves dead code upstream, never called by either `app.topbar.ts` or
+`app.floatingconfigurator.ts`, which each drive their own panel visibility through PrimeNG's
+`pStyleClass` directive instead). So: the scale control is entirely our own addition (not a port —
+there is nothing to port), and "match what Sakai does" for persistence means **add none** — confirmed
+by live Playwright verification (operator-run): reloading after changing preset/primary/scale reverts
+every field to the shipped defaults, matching upstream's own (lack of) behavior. Presented as a
+disclosed finding, not a silent substitution — the brief's phrasing anticipated this ("do not invent
+storage beyond what the source has").
+
+**Scale implementation.** `LayoutConfig.scale` (`layout-service.ts`) — default `SHELL_SCALE_DEFAULT =
+16` (px), range enforced in `ShellConfigurator` (`SCALE_MIN = 12`, `SCALE_MAX = 20`, a plain
+decrement/increment stepper styled like this repo's existing `.layout-topbar-action` icon buttons,
+not a new PrimeNG `InputNumber` dependency — simplicity-first, and the two other ported controls
+already establish `p-selectbutton` as the one PrimeNG form primitive this panel needs). A new
+`LayoutService` effect (`document.documentElement.style.fontSize = `${scale}px``) keeps the live DOM
+in sync whenever the signal changes; `_core.scss`'s static `html` rule is bumped from the ported
+14px to 16px too, so the pre-hydration paint already matches the shipped default instead of flashing
+14px then jumping.
+
+**Configurator SCSS has no MIT counterpart to port — authored by us against `@primeuix/themes`
+tokens** (extends the slice-1 GATE-0 ruling: `sakai-assets`, the only place Tailwind-based configurator
+styling could have shipped as plain CSS, has no LICENSE at all — out as a source for anything, not just
+this file). New partial `styles/_configurator.scss`, forwarded from `shell.scss`. Per-class mapping
+(Tailwind utility → own SCSS): `.flex.flex-col.gap-4` → `.layout-config-panel`/`.layout-config-panel-
+section` (flex containers with matching `gap`); `.text-sm.text-muted-color.font-semibold` →
+`.layout-config-panel-label`; the swatch buttons (`.w-5.h-5.rounded-full.outline.outline-primary`) →
+`.layout-config-panel-color`/`.layout-config-panel-color-selected` (a 2px `border-color: var(--primary-
+color)` instead of `outline`, consistent with how this file's borders are done elsewhere); the panel's
+Tailwind `dark:bg-surface-900` variant is dropped entirely rather than ported — PrimeNG's design-token
+CSS variables (`var(--surface-overlay)`) already resolve differently under `.app-dark` on their own, so
+there is no dark-specific rule to write (same simplification `.layout-topbar-menu` already relies on
+elsewhere in this SCSS tree). The open/close transition uses `@if` + native `animate.enter`/
+`animate.leave` (own keyframes, `p-configurator-enter`/`-leave`) instead of upstream's `pStyleClass` +
+Tailwind `animate-scalein`/`animate-fadeout`/`hidden` classes — mirrors `ShellMenuitem`'s existing
+submenu-animation precedent (the one native-animation example already in this codebase) rather than
+introducing `StyleClassModule`. Show/hide + outside-click-to-close is `LayoutState.configSidebarVisible`
+(revived from slice-1's dead-on-arrival port, now actually wired) plus a manual `document` click
+listener in `ShellTopbar` mirroring `ShellSidebar`'s existing outside-click pattern — chosen over
+PrimeNG's `StyleClassModule` `[hideOnOutsideClick]` specifically to avoid re-introducing Tailwind class
+names as the enter/leave vocabulary.
+
+**The `*ngIf` holdout (`showMenuModeButton`, gated on `router.url.includes('auth')`) is dropped, not
+migrated to `@if`.** In this app the shell only ever mounts inside the authenticated route subtree
+(slice 1's routing design: `/login` is a sibling route outside `<nb-shell>`), so the upstream condition
+— hide Menu Mode when the (also-upstream) floating configurator renders on a public/auth page — is
+structurally always-true here; there is no second mount context to gate against. Consistent with slice
+1's own precedent of dropping inert upstream chrome (the mobile "..." overlay, the Calendar/Messages/
+Profile buttons) rather than porting a dead condition for fidelity. Two further pieces of dead upstream
+code dropped for the same reason: the unused `config`/`primeng` (`PrimeNG`) injections in
+`app.configurator.ts` (declared, never read) and the `Router` dependency they existed for.
+
+**Test-infra gap found and fixed, unrelated to the configurator's own logic:**
+`projects/common/tsconfig.spec.json` was missing `"@angular/localize"` in its `types` array (present
+in `admin`'s and `app`'s tsconfig.spec.json already, absent only in `common`'s) — never triggered
+before because no `common` spec file had exercised a `$localize`-using source file (`shell-footer.ts`/
+`shell-topbar.ts` already used it since slice 1, just never imported by a spec). Fixed by adding the
+missing types entry, plus a new `projects/common/src/test-setup.ts` (`import '@angular/localize/init'`)
+wired via `setupFiles` in `angular.json`'s `common` test target — `@angular/localize/init` is a runtime
+polyfill, not just a type; the vitest unit-test builder for a library project has no `polyfills` option
+(that concept only exists on the application build targets), so `setupFiles` is the correct mechanism
+here, not a workaround.
+
+**Dev-server pitfall (operational, not a code note):** `admin` resolves `common` via the TS path
+mapping `"common": ["./dist/common"]` (`tsconfig.json`) — a prebuilt library output, not live source
+watching. An already-running `ng serve admin` process did not pick up a mid-session `ng build common`
+rebuild (`dist/common` sits outside the dev server's watched source tree) until the dev server itself
+was restarted; a plain browser reload was not enough. Worth knowing for any future slice that edits
+`common` while `admin`/`app` are already serving.

@@ -1,1 +1,3 @@
-/* You can add global styles to this file, and also import other style files */
+// The sakai-ng-derived shell (common/src/lib/layout) is a source-relative @use, not a `common`
+// TS-path import — Angular's SCSS compiler doesn't resolve tsconfig `paths`, only real paths.
+@use '../../common/src/lib/layout/styles/shell';

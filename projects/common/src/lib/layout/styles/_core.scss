@@ -1,0 +1,28 @@
+// Ported from primefaces/sakai-ng@20.0.0 (MIT) — see variables/_common.scss for the provenance note.
+// font-size deviates from upstream's 14px: 16px is this project's shipped default (4K reality, see
+// docs/sources-log.md "M07 slice 2"); LayoutService's scale effect keeps this in sync at runtime
+// once the configurator changes it, this is just the pre-hydration value.
+html {
+  height: 100%;
+  font-size: 16px;
+}
+
+body {
+  font-family: 'Lato', sans-serif;
+  color: var(--text-color);
+  background-color: var(--surface-ground);
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.2;
+}
+
+a {
+  text-decoration: none;
+}
+
+.layout-wrapper {
+  min-height: 100vh;
+}

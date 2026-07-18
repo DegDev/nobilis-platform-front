@@ -1,0 +1,17 @@
+// Ported from primefaces/sakai-ng@20.0.0 src/assets/layout/layout.scss (MIT). Import this one
+// partial from a consumer's global styles.scss — see docs/sources-log.md for why the SCSS is
+// sourced from tag 20.0.0 rather than the (unlicensed) 21.0.0 `sakai-assets` submodule, and
+// projects/admin/src/styles.scss for the consumer-side @use.
+@use './variables/common';
+@use './variables/light';
+@use './variables/dark';
+@use './mixins';
+@use './core';
+@use './main';
+@use './topbar';
+@use './menu';
+@use './footer';
+@use './responsive';
+@use './utils';
+@use './typography';
+@use './configurator';

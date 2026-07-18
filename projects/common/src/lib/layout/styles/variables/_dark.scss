@@ -1,0 +1,6 @@
+// Ported from primefaces/sakai-ng@20.0.0 (MIT) — see _common.scss for the provenance note.
+:root[class*='app-dark'] {
+  --surface-ground: var(--p-surface-950);
+  --code-background: var(--p-surface-800);
+  --code-color: var(--p-surface-100);
+}

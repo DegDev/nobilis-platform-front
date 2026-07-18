@@ -28,7 +28,8 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "projects/common/tsconfig.spec.json"
+            "tsConfig": "projects/common/tsconfig.spec.json",
+            "setupFiles": ["projects/common/src/test-setup.ts"]
           }
         },
         "lint": {

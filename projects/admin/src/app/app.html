@@ -1,8 +1,1 @@
-<!-- Admin shell: engine screens render into the outlet via routing. -->
-<!-- Proof-of-mechanism locale switcher; real placement belongs to a future admin shell/header. -->
-<nav>
-  <button type="button" [disabled]="locale() === 'en'" (click)="switchLocale('en')">EN</button>
-  <button type="button" [disabled]="locale() === 'ru'" (click)="switchLocale('ru')">RU</button>
-  <button type="button" [disabled]="locale() === 'ro'" (click)="switchLocale('ro')">RO</button>
-</nav>
 <router-outlet />
