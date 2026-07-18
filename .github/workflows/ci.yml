@@ -30,5 +30,8 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Test (admin, app, common)
+        run: npm run test:ci
+
       - name: Check formatting
         run: npm run format:check
