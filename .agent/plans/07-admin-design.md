@@ -57,24 +57,54 @@ separate backend task.
 ### Frontend
 Projects: `common` (library), `admin`, `app`.
 
-**Slice 1 — vertical slice (shell in `common`, mounted in `admin`):**
-- GATE-0 (before any file lands): fetch `sakai-ng@21.0.0` + its `sakai-assets` submodule (pinned
-  commit) into a scratch/temp location (not a permanent git submodule of this repo unless recon
-  in-slice determines otherwise — see Open questions), confirm the `sakai-assets` LICENSE file is
-  MIT. STOP if it is not.
-- `projects/common/src/lib/layout/` (new feature folder) — ported structural components: topbar,
-  sidebar, menu, menuitem, footer, plus `LayoutService` (signal-based layout state: sidebar
-  collapsed/mobile state, dark mode, active preset). Layout SCSS ported from `sakai-assets` into
-  this folder, re-pointed at our `@primeuix/themes` token setup.
-- `projects/common/src/public-api.ts` — export the new layout surface.
-- `projects/admin/src/app/app.ts` / `app.html` — replace the current bare
-  `<nav>` (EN/RU/RO buttons) + `<router-outlet />` root with the shell, carrying the existing admin
-  destinations (`dashboard`, `settings`, `roles`, `accounts`, `content-blocks`, `integrations`,
-  `notifications`, `ai-llm` — currently only reachable via `dashboard`'s button grid, see Open
-  questions) as the sidebar menu. Locale switcher relocates into the shell's topbar.
+**Slice 1 — vertical slice (shell in `common`, mounted in `admin`) — DONE, 2026-07-18:**
+- GATE-0 outcome (full detail in `docs/sources-log.md`, "M07 slice 1" entry): the `sakai-assets`
+  submodule has **no LICENSE at all** (no file in any commit/branch; GitHub's license API reports
+  `null`) — it fails GATE-0 as literally scoped. Presented to the operator via AskUserQuestion;
+  resolved by sourcing the layout SCSS from `primefaces/sakai-ng@20.0.0` instead (tag before
+  PrimeTek split assets into that submodule — same content, tracked directly under sakai-ng's own
+  MIT `LICENSE.md`; `layout.scss` diffed byte-identical to the 21.0.0 submodule). The Angular
+  components (`app.layout.ts`, `app.topbar.ts`, `app.sidebar.ts`, `app.menu.ts`, `app.menuitem.ts`,
+  `app.footer.ts`, `layout.service.ts`) were never in the unlicensed submodule — sourced from
+  `21.0.0` as planned. Two pinned commits now, not one: `96d71496d685b5c110efd2875abaa2bf89a56ad2`
+  (21.0.0, components) and `63c55fa37037d2e8854a63408315b9ee493cb66c` (20.0.0, SCSS).
+- **Correction to decision 3's premise:** "structural shell is already Tailwind-free" holds for the
+  SCSS and for sidebar/menu/menuitem/layout-service, but not for `app.topbar.ts` (`hidden lg:block`,
+  `pStyleClass` + `animate-scalein`/`animate-fadeout`/`hidden`) or `app.footer.ts` (`text-primary
+  font-bold hover:underline`). Resolved within the already-locked decisions 3 (no Tailwind) and 6
+  (native animations) — no new decision needed, see sources-log for the exact fix per component.
+- `projects/common/src/lib/layout/` — ported `LayoutService`, `Shell`, `ShellTopbar`,
+  `ShellSidebar`, `ShellMenu`, `ShellMenuitem`, `ShellFooter` (`nb-shell*` selectors) +
+  `styles/shell.scss` (forwarding partial + `_core`/`_main`/`_topbar`/`_menu`/`_footer`/
+  `_responsive`/`_utils`/`_typography`/`_mixins`/`variables/*`). Configurator-only state
+  (preset/primary/surface, config-sidebar visibility) deliberately not in `LayoutService` yet —
+  slice 2 adds it. The mobile "…" topbar overlay (revealed only inert demo chrome, no admin
+  behavior) was dropped rather than re-styled; sign-out reaches the topbar via `Shell`'s
+  `<ng-content>` instead. Locale switching is baked directly into `ShellTopbar` (`LocaleStore` is
+  already `common` infra, not admin-specific).
+- `projects/common/src/public-api.ts` — exports the layout surface above.
+- `projects/admin/src/app/shell/admin-shell.ts` (new) — thin admin-owned wrapper mounting
+  `<nb-shell [menu]="ADMIN_MENU">` with a projected sign-out button; `admin-menu.ts` builds the
+  `MenuItem[]` from the existing 8 destinations, reusing each screen's own already-translated
+  `*_STRINGS.title` (zero new per-item strings). `Shell` mounts via `app.routes.ts` routing (a
+  route-level wrapper around the authenticated subtree, `/login` sibling outside it) — matches
+  upstream's own pattern and is why content projection, not a root-template mount, carries sign-out.
+- `projects/admin/src/app/app.ts`/`app.html` simplified to a bare `<router-outlet />` (old EN/RU/RO
+  `<nav>` removed — relocated into `ShellTopbar`); `login.ts`/`login.html` gained a small locale
+  switcher of their own (the one route outside the shell, so it doesn't inherit the baked-in one).
+- `projects/admin/src/app/dashboard/` — button-grid removed (open question 2, resolved: redundant
+  with the sidebar); dashboard is now a plain greeting. Other screens' individual "Back to
+  dashboard" links left untouched (don't duplicate the sidebar the way the grid did; out of scope).
+- `projects/admin/src/app/app.config.ts` — `providePrimeNG` gained `darkModeSelector: '.app-dark'`
+  (required for `LayoutService`'s dark-mode class toggle to actually drive PrimeNG's theme).
 - Configurator explicitly excluded from this slice.
-- `docs/sources-log.md` — provenance entry: `primefaces/sakai-ng@21.0.0` + pinned `sakai-assets`
-  commit SHA, MIT, what was ported vs left behind.
+- `docs/sources-log.md` — full provenance entry, "M07 slice 1" (2026-07-18): both pinned commits,
+  the GATE-0 resolution, the Tailwind premise correction, the routing/projection design note, and
+  the i18n disclosure below.
+- **i18n note:** per this slice's explicit sequencing (i18n consolidated in slice 5), the few new
+  shell-only strings (`ShellAppName`, `ShellFooterBuiltWith`, `AdminMenuSectionLabel`) are
+  `$localize`-wrapped now (no hardcoded source strings) but have no RU/RO `assets/i18n/*.json`
+  overlay yet — falls back to EN under `ru`/`ro` until slice 5. Disclosed, not an oversight.
 
 **Slice 2 — configurator full port:**
 - `projects/common/src/lib/layout/configurator/` — full functional port of Sakai's configurator
@@ -108,23 +138,17 @@ Projects: `common` (library), `admin`, `app`.
   usages first, per the user's brief; do not remove speculatively).
 
 ## Open questions
-1. **GATE-0 mechanics:** does "pull the sakai-assets submodule" mean adding a real, persistent git
-   submodule to this repo (new `.gitmodules` entry), or a transient clone used only to extract
-   files during slice 1 (no permanent submodule)? Current repo has no `.gitmodules` at all. Default
-   assumption unless corrected: transient extraction, cited by pinned commit SHA in
-   `sources-log.md` — no live upstream dependency, consistent with decision 1 ("fork-template, copy
-   + own"). Confirm at slice 1 GATE-0, not before.
-2. **Dashboard's role once the sidebar exists.** `projects/admin/src/app/dashboard/dashboard.html`
-   is currently a button-grid hub linking to every other screen — the only nav mechanism admin has
-   today (recon-confirmed: zero `MenuItem` usage anywhere in the repo, all navigation is
-   `[routerLink]`/`p-button`). Once the sidebar carries the same destinations, is the dashboard's
-   button grid removed as redundant, kept as a landing page, or repurposed? Decide in slice 1 when
-   the sidebar destinations are wired — not a slice-1 blocker, but should not be left as
-   unaddressed duplication after slice 1 lands.
+1. ~~GATE-0 mechanics~~ — **Resolved in slice 1.** Transient extraction (git clone to scratch,
+   never a repo submodule), cited by pinned commit SHA — see slice 1 and `docs/sources-log.md`.
+   Turned out to matter more than expected: GATE-0 actually failed for the submodule (no license at
+   all), resolved by re-sourcing the SCSS from an earlier MIT-licensed sakai-ng tag instead.
+2. ~~Dashboard's role once the sidebar exists~~ — **Resolved in slice 1.** Button-grid removed as
+   redundant; dashboard is now a plain greeting screen.
 3. **PrimeNG version alignment.** Sakai-ng 21.0.0 pins to a specific PrimeNG minor; our repo is
    pinned to `primeng@21.1.9` / `@primeuix/themes@2.0.3` under the existing `--legacy-peer-deps`
    bridge (see `03-app-admin-shell.md` risk). Slice 1 recon should confirm the ported components
-   compile clean against our pinned versions before assuming zero friction.
+   compile clean against our pinned versions before assuming zero friction — pending the slice 1
+   `ng build` DoD check.
 
 ## Testing strategy
 

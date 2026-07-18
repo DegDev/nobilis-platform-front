@@ -1,3 +1,8 @@
+<nav class="login__locale">
+  <button type="button" [disabled]="locale() === 'en'" (click)="switchLocale('en')">EN</button>
+  <button type="button" [disabled]="locale() === 'ru'" (click)="switchLocale('ru')">RU</button>
+  <button type="button" [disabled]="locale() === 'ro'" (click)="switchLocale('ro')">RO</button>
+</nav>
 <form class="login" (submit)="onSubmit($event)">
   <h1 class="login__title">{{ strings.title }}</h1>
 

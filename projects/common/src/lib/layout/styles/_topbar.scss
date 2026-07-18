@@ -1,0 +1,193 @@
+// Ported from primefaces/sakai-ng@20.0.0 (MIT) — see variables/_common.scss for the provenance
+// note. `.layout-topbar-menu-button`/`.layout-topbar-menu` styling is kept for fidelity with
+// upstream even though ShellTopbar doesn't render those elements in slice 1 (the mobile overlay
+// menu they belonged to was dropped, not re-styled — see shell-topbar.ts).
+@use 'mixins' as *;
+
+.layout-topbar {
+  position: fixed;
+  height: 4rem;
+  z-index: 997;
+  left: 0;
+  top: 0;
+  width: 100%;
+  padding: 0 2rem;
+  background-color: var(--surface-card);
+  transition: left var(--layout-section-transition-duration);
+  display: flex;
+  align-items: center;
+
+  .layout-topbar-logo-container {
+    width: 20rem;
+    display: flex;
+    align-items: center;
+  }
+
+  .layout-topbar-logo {
+    display: inline-flex;
+    align-items: center;
+    font-size: 1.5rem;
+    border-radius: var(--content-border-radius);
+    color: var(--text-color);
+    font-weight: 500;
+    gap: 0.5rem;
+
+    svg {
+      width: 3rem;
+    }
+
+    &:focus-visible {
+      @include focused();
+    }
+  }
+
+  .layout-topbar-action {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--text-color-secondary);
+    border-radius: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    color: var(--text-color);
+    transition: background-color var(--element-transition-duration);
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--surface-hover);
+    }
+
+    &:focus-visible {
+      @include focused();
+    }
+
+    i {
+      font-size: 1.25rem;
+    }
+
+    span {
+      font-size: 1rem;
+      display: none;
+    }
+
+    &.layout-topbar-action-highlight {
+      background-color: var(--primary-color);
+      color: var(--primary-contrast-color);
+    }
+  }
+
+  .layout-menu-button {
+    margin-right: 0.5rem;
+  }
+
+  .layout-topbar-menu-button {
+    display: none;
+  }
+
+  .layout-topbar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .layout-topbar-menu-content {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .layout-config-menu {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  // New — not part of upstream sakai-ng; a minimal switcher for the `?locale=`/loadTranslations
+  // mechanism from 01-common, styled against the same PrimeUI tokens as .layout-topbar-action.
+  .layout-topbar-locale {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .layout-topbar-locale-action {
+    border: none;
+    background: none;
+    color: var(--text-color-secondary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--content-border-radius);
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background-color: var(--surface-hover);
+    }
+
+    &:disabled {
+      color: var(--primary-color);
+      cursor: default;
+    }
+  }
+}
+
+@media (max-width: 991px) {
+  .layout-topbar {
+    padding: 0 2rem;
+
+    .layout-topbar-logo-container {
+      width: auto;
+    }
+
+    .layout-menu-button {
+      margin-left: 0;
+      margin-right: 0.5rem;
+    }
+
+    .layout-topbar-menu-button {
+      display: inline-flex;
+    }
+
+    .layout-topbar-menu {
+      position: absolute;
+      background-color: var(--surface-overlay);
+      transform-origin: top;
+      box-shadow:
+        0px 3px 5px rgba(0, 0, 0, 0.02),
+        0px 0px 2px rgba(0, 0, 0, 0.05),
+        0px 1px 4px rgba(0, 0, 0, 0.08);
+      border-radius: var(--content-border-radius);
+      padding: 1rem;
+      right: 2rem;
+      top: 4rem;
+      min-width: 15rem;
+      border: 1px solid var(--surface-border);
+
+      .layout-topbar-menu-content {
+        gap: 0.5rem;
+      }
+
+      .layout-topbar-action {
+        display: flex;
+        width: 100%;
+        height: auto;
+        justify-content: flex-start;
+        border-radius: var(--content-border-radius);
+        padding: 0.5rem 1rem;
+
+        i {
+          font-size: 1rem;
+          margin-right: 0.5rem;
+        }
+
+        span {
+          font-weight: medium;
+          display: block;
+        }
+      }
+    }
+
+    .layout-topbar-menu-content {
+      flex-direction: column;
+    }
+  }
+}

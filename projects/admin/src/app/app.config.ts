@@ -28,6 +28,8 @@ export const appConfig: ApplicationConfig = {
       withInterceptors([authInterceptor, problemDetailInterceptor, localeInterceptor]),
     ),
     provideAnimationsAsync(),
-    providePrimeNG({ theme: { preset: Aura } }),
+    // darkModeSelector matches LayoutService.applyDarkMode's `.app-dark` class toggle (common's
+    // shell) — PrimeNG needs this to know which selector switches its dark-mode CSS variables.
+    providePrimeNG({ theme: { preset: Aura, options: { darkModeSelector: '.app-dark' } } }),
   ],
 };

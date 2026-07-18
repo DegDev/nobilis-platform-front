@@ -3,18 +3,4 @@
   <p>
     {{ strings.signedInAs }}: <strong>{{ subject() }}</strong>
   </p>
-  <nav class="dashboard__nav">
-    <p-button [label]="strings.settings" icon="pi pi-cog" [routerLink]="['/settings']" />
-    <p-button [label]="strings.roles" icon="pi pi-users" [routerLink]="['/roles']" />
-    <p-button [label]="strings.accounts" icon="pi pi-id-card" [routerLink]="['/accounts']" />
-    <p-button
-      [label]="strings.contentBlocks"
-      icon="pi pi-file-edit"
-      [routerLink]="['/content-blocks']"
-    />
-    <p-button [label]="strings.integrations" icon="pi pi-plug" [routerLink]="['/integrations']" />
-    <p-button [label]="strings.notifications" icon="pi pi-bell" [routerLink]="['/notifications']" />
-    <p-button [label]="strings.aiLlm" icon="pi pi-microchip-ai" [routerLink]="['/ai-llm']" />
-  </nav>
-  <p-button [label]="strings.logout" severity="secondary" (onClick)="logout()" />
 </main>

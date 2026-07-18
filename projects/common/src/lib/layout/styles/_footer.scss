@@ -1,0 +1,21 @@
+// Ported from primefaces/sakai-ng@20.0.0 (MIT) — see variables/_common.scss for the provenance
+// note. `.layout-footer-link` is new: it replaces the upstream .ts template's Tailwind utility
+// classes (`text-primary font-bold hover:underline`), which this project does not use, with the
+// equivalent plain CSS against our own PrimeUI tokens.
+.layout-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0 1rem 0;
+  gap: 0.5rem;
+  border-top: 1px solid var(--surface-border);
+}
+
+.layout-footer-link {
+  color: var(--primary-color);
+  font-weight: 700;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

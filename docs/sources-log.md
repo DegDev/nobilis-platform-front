@@ -649,3 +649,85 @@ The re-mint HTTP call targets `/auth/admin/remint`, which does NOT start with `/
 deliberately invisible to `authInterceptor`'s own `/api/admin`-prefix gate — `AuthStore.remint()` sets
 the `Authorization` header itself from the token about to be replaced, rather than relying on the
 interceptor (which would only stamp it for admin-api paths and could recurse back into itself).
+
+## 2026-07-18 — M07 slice 1: sakai-ng layout shell fork — provenance and GATE-0 outcome
+
+`.agent/plans/07-admin-design.md` locked "fork-template import from `primefaces/sakai-ng@21.0.0` +
+its `sakai-assets` submodule (pinned commit), MIT" as decision 1, with an explicit GATE-0: verify
+the submodule's LICENSE, STOP if not MIT. It wasn't MIT — recon found no LICENSE file in
+`cetincakiroglu/sakai-assets` (the submodule's third-party owner, not PrimeTek) on any commit or
+branch, and GitHub's own license-detection API reports `"license": null`. Presented to the operator
+via AskUserQuestion; the chosen resolution below is operator-confirmed, not a unilateral call.
+
+**What's actually MIT vs. what isn't.** `primefaces/sakai-ng`'s own root `LICENSE.md` (MIT, PrimeTek,
+confirmed via the GitHub API — not a fork) covers everything tracked directly in that repo. The
+Angular components slice 1 needs (`app.layout.ts`, `app.topbar.ts`, `app.sidebar.ts`, `app.menu.ts`,
+`app.menuitem.ts`, `app.footer.ts`, `layout.service.ts`) live directly in that MIT tree at
+`src/app/layout/` — sourced from commit `96d71496d685b5c110efd2875abaa2bf89a56ad2` (tag `21.0.0`).
+Only the layout **SCSS** lives in the unlicensed submodule.
+
+**Resolution:** the same SCSS (`layout.scss`, `_topbar.scss`, `_menu.scss`, `_footer.scss`,
+`_core.scss`, `_main.scss`, `_mixins.scss`, `_responsive.scss`, `_utils.scss`, `_typography.scss`,
+`variables/*.scss`) was tracked as regular files directly in `primefaces/sakai-ng` itself — under
+that same root MIT `LICENSE.md` — up through tag `20.0.0`, before PrimeTek split it into the separate
+submodule repo. Diffed both: `layout.scss` is byte-identical between MIT tag `20.0.0` and the
+unlicensed submodule at `21.0.0`; `_topbar.scss` differs only by an added `.config-panel` block
+(configurator styling, slice 2 scope, not ported here). The SCSS is sourced from commit
+`63c55fa37037d2e8854a63408315b9ee493cb66c` (tag `20.0.0`) instead of the submodule — same MIT
+grant, earlier pin. `_preloading.scss` (a bootstrap loading-spinner, no markup for it in
+`index.html`) was not ported — out of the "structural shell" scope, not a licensing call.
+
+**A second recon-premise correction, found while reading the actual `.ts` files (not asked about
+separately — decisions 3 and 6, already locked, fully determine the fix).** The plan's decision 3
+states the structural shell is "already Tailwind-free (recon-confirmed)". True for the SCSS and for
+`app.sidebar.ts`/`app.menu.ts`/`app.menuitem.ts`/`layout.service.ts`, but **not** for
+`app.topbar.ts` (`hidden lg:block`, and `pStyleClass` show/hide driven by Tailwind's `animate-scalein`
+/`animate-fadeout`/`hidden` utility classes) or `app.footer.ts` (`text-primary font-bold
+hover:underline`) — confirmed by grepping the ported SCSS for those class names (none defined there)
+and finding `@tailwindcss/postcss` wired at the sakai-ng repo root. Fix, within the already-locked
+decisions: `ShellFooter` (`projects/common/src/lib/layout/shell-footer.ts`) uses a new
+`.layout-footer-link` SCSS class (plain CSS on PrimeUI tokens) instead of the Tailwind utilities.
+`ShellTopbar` (`shell-topbar.ts`) drops the mobile "…" overlay panel entirely rather than re-styling
+it — it only ever revealed inert demo chrome (Calendar/Messages/Profile buttons with no handlers in
+this admin); the one real action that lived there, sign-out, is supplied by `AdminShell` via content
+projection instead (`Shell`'s `<ng-content>` forwards into `ShellTopbar`'s). The palette/configurator
+button and `<app-configurator>` embed are dropped for the same reason decision 5 already gives —
+configurator is slice 2, excluded here.
+
+**Why `Shell` mounts via routing, not the root component template.** Upstream's own `app.routes.ts`
+nests `AppLayout` as a route-level wrapper (`{ path: '', component: AppLayout, children: [...] }`),
+not inside the root `AppComponent`'s template. Mirrored here for the same reason it exists upstream:
+the shell must wrap only the authenticated route subtree, not the (unauthenticated) `/login` screen.
+This has one consequence upstream doesn't have to deal with: a route-mounted component can't receive
+projected light-DOM content from a call site, so `AdminShell` (`projects/admin/src/app/shell/`) is a
+thin admin-owned wrapper that instantiates `<nb-shell>` directly in its own template — `common`'s
+`Shell`/`ShellTopbar` stay generic (no `AuthStore` dependency), `AdminShell` owns the concrete nav
+model and the sign-out action. The locale switcher, by contrast, is baked directly into `ShellTopbar`
+— `LocaleStore` is already `common` infrastructure, not admin-specific, so there is no reason to
+route it through projection. The one route outside the shell, `/login`, lost the root component's
+former locale switcher when `app.ts`/`app.html` were simplified to a bare `<router-outlet>` — it
+now carries a small switcher of its own (`login.ts`/`login.html`), same `LocaleStore` call, ~5 lines
+duplicated rather than a cross-cutting abstraction for two call sites (three-similar-lines-beats-a-
+premature-abstraction).
+
+**Admin menu labels reuse existing translated strings, not new ones.** `admin-menu.ts`
+(`projects/admin/src/app/shell/`) labels each sidebar entry with its target screen's own already-
+`$localize`'d `title` (`SETTINGS_STRINGS.title`, `ROLES_STRINGS.title`, etc.) instead of inventing
+parallel strings — these are the exact same `@@Settings`/`@@Roles`/etc. message IDs the screens
+already carry. `DASHBOARD_STRINGS` is trimmed to just `title`/`signedInAs`/`logout` (the nav-button
+labels it used to hold for the old dashboard button-grid moved to each screen's own strings file).
+The one genuinely new string is a single sidebar section header (`ADMIN_MENU_STRINGS.section`,
+`@@AdminMenuSectionLabel:Menu`) — nav-as-data (slice 3) may remove the need for it. Per the plan's
+explicit slice sequencing ("i18n for shell/configurator user-visible strings" is slice 5's job), new
+shell-only strings introduced this slice (`ShellAppName`, `ShellFooterBuiltWith`,
+`AdminMenuSectionLabel`) are `$localize`-wrapped (never hardcoded — satisfies this repo's default
+DoD for source code) but have no RU/RO overlay entries in `assets/i18n/*.json` yet; they render in
+English under `ru`/`ro` until slice 5 adds the overlay values, which is a disclosed, deliberate gap,
+not an oversight.
+
+**Also resolved (open question 2 from the plan):** the old `dashboard.html` button-grid (the only
+nav mechanism admin had before this slice — recon confirmed zero `MenuItem` usage anywhere) is
+removed as redundant now that the sidebar carries the same destinations; the dashboard screen is
+now just a greeting. Each other screen's own "Back to dashboard" link is left untouched — unlike the
+dashboard grid, it doesn't duplicate the sidebar, and touching seven files for it is out of this
+slice's scope.

@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
+import { Locale, LocaleStore } from 'common';
 import { AuthStore } from '../auth-store';
 import { LOGIN_STRINGS } from './login.strings';
 
@@ -12,6 +13,10 @@ import { LOGIN_STRINGS } from './login.strings';
  * the thick token (via {@link AuthStore}) and routes to the dashboard; a rejected credential shows
  * an inline error. The form is Signal Forms bound to native inputs carrying the PrimeNG
  * `pInputText` directive (see the note in the build report on the p-password interop decision).
+ *
+ * Carries its own small locale switcher: this is the one route outside `AdminShell` (login has no
+ * sidebar/topbar), so it doesn't get the shell's baked-in switcher — a signed-out user still needs
+ * to pick a language before signing in.
  */
 @Component({
   selector: 'nb-login',
@@ -22,8 +27,10 @@ import { LOGIN_STRINGS } from './login.strings';
 export class Login {
   private readonly authStore = inject(AuthStore);
   private readonly router = inject(Router);
+  private readonly localeStore = inject(LocaleStore);
 
   protected readonly strings = LOGIN_STRINGS;
+  protected readonly locale = this.localeStore.locale;
   protected readonly failed = signal(false);
   protected readonly submitting = signal(false);
 
@@ -49,5 +56,12 @@ export class Login {
         this.submitting.set(false);
       },
     });
+  }
+
+  // loadTranslations() doesn't retro-activate $localize strings already evaluated in the running
+  // app, so a locale switch reloads the page rather than trying to be reactive.
+  protected switchLocale(locale: Locale): void {
+    this.localeStore.setLocale(locale);
+    location.reload();
   }
 }
