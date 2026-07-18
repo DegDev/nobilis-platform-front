@@ -621,3 +621,31 @@ use for `fieldErrors`-less problems.
 Screen is deliberately SPARTAN (plain PrimeNG defaults, native `<select>`) per the milestone's
 explicit instruction — a dedicated admin design-system milestone follows 06 and will redress every
 screen at once; polishing this one now would be redone work.
+
+## 2026-07-13 — Silent token refresh: single-flight re-mint coalescing in `authInterceptor`
+
+`AuthStore.remint()` (`projects/admin/src/app/auth/auth-store.ts`) is the repo's first instance of
+request coalescing: a private `remintInFlight$: Observable<string> | null` field, with
+`.pipe(map, tap, finalize(() => (this.remintInFlight$ = null)), shareReplay(1))`. Recon confirmed
+zero prior precedent anywhere in the frontend (`shareReplay`/`share(`/`Subject<`/`mutex`/`inFlight`
+all zero hits) — this is greenfield, not a deviation from an existing idiom.
+
+Operator order is load-bearing: `finalize` sits BEFORE `shareReplay` in the pipe, not after. Placed
+after `shareReplay` it would fire once per external subscriber's unsubscription instead of once for
+the single shared HTTP call — `shareReplay` multicasts ONE upstream subscription to every caller, and
+`finalize` upstream of it tears down exactly when that one shared subscription completes, which is
+the single point where the "next remint cycle should start a fresh call" guard needs to reset.
+
+`authInterceptor` (`auth-interceptor.ts`) calls `AuthStore.remint()` from two independent triggers —
+proactively (token has under 5 minutes left, checked via the new `decodeJwtExp` in `jwt.ts`) and
+reactively (a request already went out on an expired token and got a 401, backgrounded-tab/clock-drift
+case) — both funneling through the same coalesced call, so N requests racing an expiring token during
+an idle-tab wake produce exactly one backend round-trip, not N. Reactive retry is capped at exactly
+one attempt: a second failure (the re-mint itself failing, meaning the backend's `loginAt`-based
+staleness cap or grace window rejected it) logs out and redirects to `/login`, reusing the same
+fallback `authGuard` already uses for a missing token — no new redirect path introduced.
+
+The re-mint HTTP call targets `/auth/admin/remint`, which does NOT start with `/api/admin`, so it is
+deliberately invisible to `authInterceptor`'s own `/api/admin`-prefix gate — `AuthStore.remint()` sets
+the `Authorization` header itself from the token about to be replaced, rather than relying on the
+interceptor (which would only stamp it for admin-api paths and could recurse back into itself).

@@ -1,6 +1,6 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, map, tap } from 'rxjs';
+import { Observable, finalize, map, shareReplay, tap } from 'rxjs';
 import { decodeJwtSubject } from './jwt';
 
 /** Admin login response body — mirrors the backend `LoginResponse` record. */
@@ -24,6 +24,13 @@ export class AuthStore {
   private readonly tokenSignal = signal<string | null>(
     sessionStorage.getItem(AuthStore.STORAGE_KEY),
   );
+  /**
+   * Coalesces concurrent re-mint calls (e.g. several requests hitting a near-expiry token at once,
+   * such as a tab waking from idle) into a single backend round-trip. `shareReplay(1)` multicasts the
+   * one in-flight HTTP call to every caller; `finalize` clears the guard once it settles so the NEXT
+   * re-mint cycle starts a fresh call rather than replaying a stale cached token forever.
+   */
+  private remintInFlight$: Observable<string> | null = null;
 
   readonly token = this.tokenSignal.asReadonly();
   readonly isAuthenticated = computed(() => this.tokenSignal() !== null);
@@ -42,6 +49,31 @@ export class AuthStore {
 
   logout(): void {
     this.setToken(null);
+  }
+
+  /**
+   * Silently re-mints the current token into a fresh one via the backend's stateless remint endpoint
+   * (no DB round-trip). Presents the CURRENT token as the bearer credential — the remint endpoint is
+   * exempt from the admin contour, so this must set the header explicitly rather than relying on
+   * {@link authInterceptor}, which only stamps `/api/admin` requests.
+   *
+   * Concurrent callers share the one in-flight call (see {@link remintInFlight$}); each gets the same
+   * fresh token once it resolves.
+   */
+  remint(): Observable<string> {
+    if (this.remintInFlight$) {
+      return this.remintInFlight$;
+    }
+    const current = this.tokenSignal();
+    const headers = current ? new HttpHeaders({ Authorization: `Bearer ${current}` }) : undefined;
+    const request$ = this.http.post<LoginResponse>('/auth/admin/remint', null, { headers }).pipe(
+      map((response) => response.token),
+      tap((token) => this.setToken(token)),
+      finalize(() => (this.remintInFlight$ = null)),
+      shareReplay(1),
+    );
+    this.remintInFlight$ = request$;
+    return request$;
   }
 
   private setToken(token: string | null): void {
