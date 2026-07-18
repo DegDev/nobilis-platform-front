@@ -1,33 +1,39 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, OnInit, AfterViewInit, computed, inject, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
+import { MenuItem } from 'primeng/api';
 import { RippleModule } from 'primeng/ripple';
 import { filter } from 'rxjs/operators';
 import { LayoutService } from './layout-service';
 
 /**
  * Ported from primefaces/sakai-ng@21.0.0 src/app/layout/component/app.menuitem.ts (MIT). The
- * `item` input stays loosely typed (matching upstream) — a typed nav-model contract replacing
- * this + the raw `MenuItem[]` shape is slice 3 (nav-as-data, resolves BL-004), not this slice.
+ * `item` input is `MenuItem` (its own `[key: string]: any` index signature already covers the
+ * custom `path`/`class`/`badgeClass` extras this file reads) rather than a dedicated nav-model
+ * type — a typed nav-model contract replacing this + the raw `MenuItem[]` shape is slice 3
+ * (nav-as-data, resolves BL-004), not this slice.
  */
 @Component({
+  // Deliberate attribute selector (recurses onto `<li nb-shell-menuitem>` below and in
+  // shell-menu.ts, matching upstream's own attribute-based recursive menuitem pattern) —
+  // eslint-disable-next-line @angular-eslint/component-selector
   selector: '[nb-shell-menuitem]',
   imports: [CommonModule, RouterModule, RippleModule],
   template: `
     @if (root() && isVisible()) {
-      <div class="layout-menuitem-root-text">{{ item().label }}</div>
+      <div class="layout-menuitem-root-text">{{ item()?.label }}</div>
     }
     @if ((!hasRouterLink() || hasChildren()) && isVisible()) {
       <a
-        [attr.href]="item().url"
+        [attr.href]="item()?.url"
         (click)="itemClick($event)"
-        [ngClass]="item().class"
-        [attr.target]="item().target"
+        [ngClass]="item()?.['class']"
+        [attr.target]="item()?.target"
         tabindex="0"
         pRipple
       >
-        <i [ngClass]="item().icon" class="layout-menuitem-icon"></i>
-        <span class="layout-menuitem-text">{{ item().label }}</span>
+        <i [ngClass]="item()?.icon" class="layout-menuitem-icon"></i>
+        <span class="layout-menuitem-text">{{ item()?.label }}</span>
         @if (hasChildren()) {
           <i class="pi pi-fw pi-angle-down layout-submenu-toggler"></i>
         }
@@ -36,23 +42,23 @@ import { LayoutService } from './layout-service';
     @if (hasRouterLink() && !hasChildren() && isVisible()) {
       <a
         (click)="itemClick($event)"
-        [ngClass]="item().class"
-        [routerLink]="item().routerLink"
+        [ngClass]="item()?.['class']"
+        [routerLink]="item()?.routerLink"
         routerLinkActive="active-route"
         [routerLinkActiveOptions]="
-          item().routerLinkActiveOptions || {
+          item()?.routerLinkActiveOptions || {
             paths: 'exact',
             queryParams: 'ignored',
             matrixParams: 'ignored',
             fragment: 'ignored',
           }
         "
-        [attr.target]="item().target"
+        [attr.target]="item()?.target"
         tabindex="0"
         pRipple
       >
-        <i [ngClass]="item().icon" class="layout-menuitem-icon"></i>
-        <span class="layout-menuitem-text">{{ item().label }}</span>
+        <i [ngClass]="item()?.icon" class="layout-menuitem-icon"></i>
+        <span class="layout-menuitem-text">{{ item()?.label }}</span>
         @if (hasChildren()) {
           <i class="pi pi-fw pi-angle-down layout-submenu-toggler"></i>
         }
@@ -64,7 +70,7 @@ import { LayoutService } from './layout-service';
         [animate.leave]="'p-submenu-leave'"
         [class.layout-root-submenulist]="root()"
       >
-        @for (child of item().items; track child?.label) {
+        @for (child of item()?.items; track child?.label) {
           <li
             nb-shell-menuitem
             [item]="child"
@@ -114,20 +120,20 @@ import { LayoutService } from './layout-service';
     `,
   ],
 })
-export class ShellMenuitem {
+export class ShellMenuitem implements OnInit, AfterViewInit {
   private readonly layoutService = inject(LayoutService);
   private readonly router = inject(Router);
 
-  readonly item = input<any>(null);
+  readonly item = input<MenuItem | null>(null);
   readonly root = input<boolean>(false);
   readonly parentPath = input<string | null>(null);
 
   readonly isVisible = computed(() => this.item()?.visible !== false);
-  readonly hasChildren = computed(() => this.item()?.items && this.item()?.items.length > 0);
+  readonly hasChildren = computed(() => !!this.item()?.items?.length);
   readonly hasRouterLink = computed(() => !!this.item()?.routerLink);
 
   readonly fullPath = computed(() => {
-    const itemPath = this.item()?.path;
+    const itemPath = this.item()?.['path'];
     if (!itemPath) return this.parentPath();
     const parent = this.parentPath();
     if (parent && !itemPath.startsWith(parent)) {
@@ -138,7 +144,7 @@ export class ShellMenuitem {
 
   readonly isActive = computed(() => {
     const activePath = this.layoutService.layoutState().activePath;
-    if (this.item()?.path) {
+    if (this.item()?.['path']) {
       return activePath?.startsWith(this.fullPath() ?? '') ?? false;
     }
     return false;
